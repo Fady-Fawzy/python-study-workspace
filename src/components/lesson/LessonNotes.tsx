@@ -14,15 +14,22 @@ export const LessonNotes: React.FC<LessonNotesProps> = ({
 }) => {
   const [note, setNote] = useState(initialNote || '');
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [prevLessonId, setPrevLessonId] = useState(lessonId);
   const timerRef = useRef<number | null>(null);
-  const noteRef = useRef(note);
-  noteRef.current = note;
 
-  // Sync when lessonId changes
-  useEffect(() => {
+  if (prevLessonId !== lessonId) {
+    setPrevLessonId(lessonId);
     setNote(initialNote || '');
     setStatus('idle');
-  }, [lessonId, initialNote]);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
@@ -46,7 +53,7 @@ export const LessonNotes: React.FC<LessonNotesProps> = ({
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-    onSaveNote(lessonId, noteRef.current);
+    onSaveNote(lessonId, note);
     setStatus('saved');
     setTimeout(() => {
       setStatus('idle');

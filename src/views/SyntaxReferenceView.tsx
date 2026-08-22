@@ -18,7 +18,7 @@ function renderFormattedHtml(text: string): string {
   try {
     const rawHtml = marked.parse(text) as string;
     return rawHtml.replace(/<code>/g, '<code class="inline-code" dir="ltr">');
-  } catch (e) {
+  } catch {
     return text;
   }
 }

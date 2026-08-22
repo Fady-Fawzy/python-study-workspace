@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import lessonsRaw from '../elzero_python_lessons_20_to_74.md?raw';
 import syntaxRaw from '../python_syntax_reference_elzero_20_74.md?raw';
 import { parseLessons, parseSyntaxReference } from './lib/contentParser';
 import { buildSearchIndex } from './lib/searchIndex';
 import { loadStudyState, saveStudyState } from './lib/storage';
+import { parseRoute, normalizePath } from './lib/routing';
 import { StudyStateV1 } from './types/state';
 import { AppShell } from './components/layout/AppShell';
 import { StudyDashboard } from './views/StudyDashboard';
@@ -22,13 +23,13 @@ export function App() {
   const [state, setState] = useState<StudyStateV1>(() => loadStudyState());
 
   // Save on state change
-  const updateState = (updater: (prev: StudyStateV1) => StudyStateV1) => {
+  const updateState = useCallback((updater: (prev: StudyStateV1) => StudyStateV1) => {
     setState(prev => {
       const next = updater(prev);
       saveStudyState(next);
       return next;
     });
-  };
+  }, []);
 
   // 3. Theme Management
   useEffect(() => {
@@ -54,21 +55,20 @@ export function App() {
 
   // 4. Client-side Routing Strategy (Supports Hash and Pathname cleanly)
   const getInitialPath = () => {
-    const hash = window.location.hash.replace(/^#/, '');
-    if (hash) return hash;
-    const path = window.location.pathname;
-    return path || '/';
+    const hash = window.location.hash;
+    if (hash) return normalizePath(hash);
+    return normalizePath(window.location.pathname || '/');
   };
 
   const [currentPath, setCurrentPath] = useState<string>(getInitialPath);
 
   useEffect(() => {
     const handleLocationChange = () => {
-      const hash = window.location.hash.replace(/^#/, '');
+      const hash = window.location.hash;
       if (hash) {
-        setCurrentPath(hash);
+        setCurrentPath(normalizePath(hash));
       } else {
-        setCurrentPath(window.location.pathname || '/');
+        setCurrentPath(normalizePath(window.location.pathname || '/'));
       }
     };
 
@@ -82,7 +82,7 @@ export function App() {
 
   const navigate = (path: string) => {
     window.location.hash = path;
-    setCurrentPath(path);
+    setCurrentPath(normalizePath(path));
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
@@ -90,74 +90,63 @@ export function App() {
     updateState(prev => ({ ...prev, theme }));
   };
 
-  // Extract active lesson ID if on /lesson/:id
-  const lessonMatch = currentPath.match(/^\/lesson\/(\d{3})/);
-  const activeLessonId = lessonMatch ? lessonMatch[1] : null;
-
-  // Extract syntax section query if on /reference?section=:id
-  const isReferencePath = currentPath.startsWith('/reference');
-  const sectionQueryMatch = currentPath.match(/[?&]section=(\d+)/);
-  const initialSectionId = sectionQueryMatch ? parseInt(sectionQueryMatch[1], 10) : null;
+  const route = parseRoute(currentPath);
 
   // Render View based on Route
   const renderView = () => {
-    if (activeLessonId) {
-      return (
-        <LessonView
-          lessonId={activeLessonId}
-          lessons={lessons}
-          syntaxSections={syntaxSections}
-          state={state}
-          onUpdateState={updateState}
-          onNavigate={navigate}
-        />
-      );
+    switch (route.view) {
+      case 'lesson':
+        return (
+          <LessonView
+            lessonId={route.lessonId}
+            lessons={lessons}
+            syntaxSections={syntaxSections}
+            state={state}
+            onUpdateState={updateState}
+            onNavigate={navigate}
+          />
+        );
+      case 'reference':
+        return (
+          <SyntaxReferenceView
+            syntaxSections={syntaxSections}
+            state={state}
+            initialSectionId={route.sectionId}
+            onUpdateState={updateState}
+          />
+        );
+      case 'bookmarks':
+        return (
+          <BookmarksView
+            lessons={lessons}
+            syntaxSections={syntaxSections}
+            state={state}
+            onNavigate={navigate}
+            onUpdateState={updateState}
+          />
+        );
+      case 'notes':
+        return (
+          <NotesView
+            lessons={lessons}
+            state={state}
+            onNavigate={navigate}
+            onUpdateState={updateState}
+          />
+        );
+      default:
+        return (
+          <StudyDashboard
+            lessons={lessons}
+            syntaxSections={syntaxSections}
+            state={state}
+            onNavigate={navigate}
+          />
+        );
     }
-
-    if (isReferencePath) {
-      return (
-        <SyntaxReferenceView
-          syntaxSections={syntaxSections}
-          state={state}
-          initialSectionId={initialSectionId}
-          onUpdateState={updateState}
-        />
-      );
-    }
-
-    if (currentPath === '/bookmarks') {
-      return (
-        <BookmarksView
-          lessons={lessons}
-          syntaxSections={syntaxSections}
-          state={state}
-          onNavigate={navigate}
-          onUpdateState={updateState}
-        />
-      );
-    }
-
-    if (currentPath === '/notes') {
-      return (
-        <NotesView
-          lessons={lessons}
-          state={state}
-          onNavigate={navigate}
-          onUpdateState={updateState}
-        />
-      );
-    }
-
-    // Default: Study Dashboard
-    return (
-      <StudyDashboard
-        lessons={lessons}
-        syntaxSections={syntaxSections}
-        state={state}
-        onNavigate={navigate}
-      />
-    );
   };
+
+  const activeLessonId = route.view === 'lesson' ? route.lessonId : null;
 
   return (
     <AppShell

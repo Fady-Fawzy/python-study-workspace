@@ -30,7 +30,9 @@ The workspace treats these two root files as the source of truth:
 
 ## 🛠️ Technology Stack
 
-- **Framework**: Vite 6 + React 19 + TypeScript
+- **Framework**: Vite 6 + React 19 + TypeScript 5
+- **Linting & Code Quality**: ESLint 9 (Flat Config) with TypeScript & React Hooks plugins
+- **Automated Testing**: Vitest 3 with jsdom
 - **Icons**: Lucide React
 - **Markdown AST**: Marked
 - **Syntax Highlighting**: PrismJS (Python grammar)
@@ -39,7 +41,7 @@ The workspace treats these two root files as the source of truth:
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Development & Scripts
 
 ### 1. Install Dependencies
 
@@ -53,24 +55,50 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:3000` to start studying with hot module replacement.
+Visit `http://localhost:3000` to start studying with instant live hot module replacement.
 
-### 3. Production Build
+### 3. Quality & Verification Commands
 
 ```bash
+# Run TypeScript compiler check (no output files)
+npm run typecheck
+
+# Run ESLint across TypeScript and React code
+npm run lint
+
+# Run Vitest in interactive watch mode
+npm run test
+
+# Run all automated test suites once
+npm run test:run
+
+# Build production bundle to dist/
 npm run build
-```
 
-The output bundle is generated in `dist/`.
-
-### 4. Preview Production Build Locally
-
-```bash
+# Preview production build locally
 npm run preview
 ```
 
 ---
 
-## 🔄 Deployment
+## 🛡️ Quality Pipeline & CI/CD
 
-The repository uses GitHub Actions (`.github/workflows/deploy.yml`) to automatically build and deploy the production bundle to GitHub Pages whenever changes are pushed to `main`.
+Deployment to GitHub Pages is gated behind a strict multi-stage verification pipeline in `.github/workflows/deploy.yml`:
+
+```text
+git push origin main
+       ↓
+    npm ci
+       ↓
+npm run typecheck   ──(TypeScript Check)──► [Fail: Block Deploy]
+       ↓
+  npm run lint      ────(ESLint 9)────────► [Fail: Block Deploy]
+       ↓
+npm run test:run    ──(Vitest Suite)──────► [Fail: Block Deploy]
+       ↓
+ npm run build      ───(Vite Build)───────► [Fail: Block Deploy]
+       ↓
+GitHub Pages Deploy ───(Live Production)──► https://fady-fawzy.github.io/python-study-workspace/
+```
+
+If **any** verification step fails (TypeScript, Lint, Test, or Build), GitHub Actions immediately halts and blocks deployment to protect the live study environment.

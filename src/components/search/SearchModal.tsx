@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, BookOpen, Code, FileText, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { SearchResult } from '../../types/content';
 import { IndexedItem, searchIndexedItems } from '../../lib/searchIndex';
@@ -17,31 +17,30 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onSelectResult
 }) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setQuery('');
-      setResults([]);
       setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [isOpen]);
+  }
+
+  const results: SearchResult[] = useMemo(() => {
+    if (!query.trim()) return [];
+    return searchIndexedItems(query, index);
+  }, [query, index]);
 
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setSelectedIndex(0);
-      return;
+    if (isOpen) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
-
-    const res = searchIndexedItems(query, index);
-    setResults(res);
-    setSelectedIndex(0);
-  }, [query, index]);
+  }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -135,7 +134,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
             placeholder="Search lessons (e.g. 56), syntax, methods (append, kwargs, filter)..."
             style={{
               flex: 1,
@@ -149,7 +151,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           {query && (
             <button
               type="button"
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('');
+                setSelectedIndex(0);
+              }}
               style={{ color: 'var(--text-muted)', display: 'flex' }}
             >
               <X size={16} />
@@ -195,7 +200,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   <button
                     key={sample}
                     type="button"
-                    onClick={() => setQuery(sample)}
+                    onClick={() => {
+                      setQuery(sample);
+                      setSelectedIndex(0);
+                    }}
                     style={{
                       padding: '3px 8px',
                       fontSize: 'var(--text-xs)',

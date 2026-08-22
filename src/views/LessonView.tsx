@@ -46,7 +46,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     });
 
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [lesson?.id]);
+  }, [lesson, onUpdateState]);
 
   if (!lesson) {
     return <div>Lesson not found</div>;
