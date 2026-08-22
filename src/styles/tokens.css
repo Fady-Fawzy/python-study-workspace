@@ -1,0 +1,154 @@
+/* ==========================================================================
+   Design System Tokens — Personal Python Study Workspace
+   ========================================================================== */
+
+:root {
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.844rem;    /* 13.5px */
+  --text-base: 0.938rem;  /* 15px */
+  --text-md: 1.0625rem;   /* 17px */
+  --text-lg: 1.25rem;     /* 20px */
+  --text-xl: 1.5rem;      /* 24px */
+  --text-2xl: 1.875rem;   /* 30px */
+
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+  --leading-arabic: 1.85;
+
+  /* Spacing Scale */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+
+  /* Radius (Restrained & Functional) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-normal: 180ms ease;
+  --transition-drawer: 240ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout Widths */
+  --sidebar-width: 280px;
+  --header-height: 56px;
+  --content-max-width: 860px;
+  --toc-width: 220px;
+}
+
+/* Dark Theme (Default) */
+[data-theme='dark'] {
+  --bg-app: #090d14;
+  --bg-surface: #0f1520;
+  --bg-surface-raised: #151d2c;
+  --bg-surface-hover: #1a2436;
+  --bg-surface-active: #222e44;
+  --bg-code: #0b1018;
+  --bg-code-header: #0e141e;
+  --bg-badge: #182234;
+  --bg-callout: rgba(56, 139, 253, 0.08);
+
+  --border-subtle: #1c2638;
+  --border-default: #25334a;
+  --border-active: #388bfd;
+  --border-code: #1e2a3e;
+
+  --text-primary: #e6edf3;
+  --text-secondary: #9fb0c7;
+  --text-muted: #627288;
+  --text-inverse: #090d14;
+
+  --accent-primary: #388bfd;
+  --accent-primary-hover: #58a6ff;
+  --accent-primary-muted: rgba(56, 139, 253, 0.15);
+
+  --accent-gold: #f0883e;
+  --accent-gold-muted: rgba(240, 136, 62, 0.15);
+
+  --accent-success: #3fb950;
+  --accent-success-muted: rgba(63, 185, 80, 0.15);
+
+  --accent-danger: #f85149;
+  --accent-danger-muted: rgba(248, 81, 73, 0.15);
+
+  --focus-ring: 0 0 0 2px #388bfd;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6);
+
+  --prism-comment: #627288;
+  --prism-builtin: #79c0ff;
+  --prism-string: #a5d6ff;
+  --prism-number: #79c0ff;
+  --prism-keyword: #ff7b72;
+  --prism-operator: #ff7b72;
+  --prism-function: #d2a8ff;
+  --prism-punctuation: #8b949e;
+}
+
+/* Light Theme */
+[data-theme='light'] {
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #f1f5f9;
+  --bg-surface-hover: #e2e8f0;
+  --bg-surface-active: #cbd5e1;
+  --bg-code: #0f172a;
+  --bg-code-header: #1e293b;
+  --bg-badge: #e2e8f0;
+  --bg-callout: rgba(37, 99, 235, 0.06);
+
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-active: #2563eb;
+  --border-code: #334155;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  --accent-primary: #2563eb;
+  --accent-primary-hover: #1d4ed8;
+  --accent-primary-muted: rgba(37, 99, 235, 0.1);
+
+  --accent-gold: #d97706;
+  --accent-gold-muted: rgba(217, 119, 6, 0.1);
+
+  --accent-success: #16a34a;
+  --accent-success-muted: rgba(22, 163, 74, 0.1);
+
+  --accent-danger: #dc2626;
+  --accent-danger-muted: rgba(220, 38, 38, 0.1);
+
+  --focus-ring: 0 0 0 2px #2563eb;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);
+
+  --prism-comment: #94a3b8;
+  --prism-builtin: #93c5fd;
+  --prism-string: #bae6fd;
+  --prism-number: #93c5fd;
+  --prism-keyword: #fca5a5;
+  --prism-operator: #fca5a5;
+  --prism-function: #d8b4fe;
+  --prism-punctuation: #cbd5e1;
+}
