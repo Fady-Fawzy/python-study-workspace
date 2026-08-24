@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parseLessons, parseSyntaxReference } from '../contentParser';
 import { buildSearchIndex, searchIndexedItems } from '../searchIndex';
+import { parseDetailedLesson } from '../detailedContent';
 
 const lessonsRaw = fs.readFileSync(path.resolve(process.cwd(), 'elzero_python_lessons_20_to_74.md'), 'utf-8');
 const syntaxRaw = fs.readFileSync(path.resolve(process.cwd(), 'python_syntax_reference_elzero_20_74.md'), 'utf-8');
@@ -74,6 +75,21 @@ describe('Search Engine Ranking', () => {
   it('returns an empty array for empty or whitespace query', () => {
     expect(searchIndexedItems('', index)).toEqual([]);
     expect(searchIndexedItems('   ', index)).toEqual([]);
+  });
+
+  it('includes enriched Detailed Study prose in lesson search without replacing base content', () => {
+    const detailed020Raw = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/content/detailed/020.md'),
+      'utf-8'
+    );
+    const detailed020 = parseDetailedLesson(detailed020Raw, '020');
+    const enrichedIndex = buildSearchIndex(lessons, syntaxSections, { '020': detailed020 });
+
+    const results = searchIndexedItems('أرضية الناتج', enrichedIndex);
+    expect(results[0]).toEqual(expect.objectContaining({
+      type: 'lesson',
+      lessonNumber: 20
+    }));
   });
 
   it('sorts all search results in strictly descending score order', () => {

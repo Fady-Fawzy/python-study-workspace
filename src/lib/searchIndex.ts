@@ -1,4 +1,4 @@
-import { Lesson, SyntaxSection, SearchResult } from '../types/content';
+import { DetailedLessonMap, Lesson, SyntaxSection, SearchResult } from '../types/content';
 
 export interface IndexedItem {
   id: string;
@@ -14,13 +14,18 @@ export interface IndexedItem {
   exactTerms: string[];
 }
 
-export function buildSearchIndex(lessons: Lesson[], syntaxSections: SyntaxSection[]): IndexedItem[] {
+export function buildSearchIndex(
+  lessons: Lesson[],
+  syntaxSections: SyntaxSection[],
+  detailedLessons: DetailedLessonMap = {}
+): IndexedItem[] {
   const index: IndexedItem[] = [];
 
   // Index Lessons
   for (const lesson of lessons) {
     const lessonNumStr = lesson.number.toString();
     const lessonPadStr = lesson.id; // "020"
+    const detailedLesson = detailedLessons[lesson.id];
 
     index.push({
       id: `lesson-${lesson.id}`,
@@ -35,9 +40,10 @@ export function buildSearchIndex(lessons: Lesson[], syntaxSections: SyntaxSectio
         lesson.title.toLowerCase(),
         lesson.category.toLowerCase(),
         ...lesson.methods.map(m => m.toLowerCase()),
-        ...lesson.toc.map(t => t.text.toLowerCase())
+        ...lesson.toc.map(t => t.text.toLowerCase()),
+        ...(detailedLesson?.toc.map(t => t.text.toLowerCase()) || [])
       ],
-      content: lesson.rawMarkdown.toLowerCase()
+      content: [lesson.rawMarkdown, detailedLesson?.rawMarkdown || ''].join('\n').toLowerCase()
     });
 
     // Index Methods specifically attached to this lesson

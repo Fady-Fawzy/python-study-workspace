@@ -27,6 +27,38 @@ export interface Lesson {
   summary?: string;
 }
 
+export type DetailedBlockType =
+  | 'heading'
+  | 'prose'
+  | 'code'
+  | 'output'
+  | 'error'
+  | 'note'
+  | 'warning'
+  | 'comparison'
+  | 'mental-model'
+  | 'rich-text';
+
+export interface DetailedContentBlock {
+  id: string;
+  type: DetailedBlockType;
+  content: string;
+  level?: number;
+  language?: string;
+  label?: string;
+}
+
+export interface DetailedLesson {
+  id: string;
+  number: number;
+  title: string;
+  rawMarkdown: string;
+  blocks: DetailedContentBlock[];
+  toc: TocItem[];
+}
+
+export type DetailedLessonMap = Record<string, DetailedLesson>;
+
 export interface SyntaxSubsection {
   id: string;
   heading: string;

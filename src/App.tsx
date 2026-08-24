@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import lessonsRaw from '../elzero_python_lessons_20_to_74.md?raw';
 import syntaxRaw from '../python_syntax_reference_elzero_20_74.md?raw';
 import { parseLessons, parseSyntaxReference } from './lib/contentParser';
+import { parseDetailedLessonSources } from './lib/detailedContent';
+import { DETAILED_LESSON_SOURCES } from './content/detailed';
 import { buildSearchIndex } from './lib/searchIndex';
 import { loadStudyState, saveStudyState } from './lib/storage';
 import { parseRoute, normalizePath } from './lib/routing';
@@ -17,7 +19,14 @@ export function App() {
   // 1. Parse Markdown Content
   const { lessons } = useMemo(() => parseLessons(lessonsRaw), []);
   const syntaxSections = useMemo(() => parseSyntaxReference(syntaxRaw), []);
-  const searchIndex = useMemo(() => buildSearchIndex(lessons, syntaxSections), [lessons, syntaxSections]);
+  const detailedLessons = useMemo(
+    () => parseDetailedLessonSources(DETAILED_LESSON_SOURCES),
+    []
+  );
+  const searchIndex = useMemo(
+    () => buildSearchIndex(lessons, syntaxSections, detailedLessons),
+    [lessons, syntaxSections, detailedLessons]
+  );
 
   // 2. Persistent State
   const [state, setState] = useState<StudyStateV1>(() => loadStudyState());
@@ -100,6 +109,7 @@ export function App() {
           <LessonView
             lessonId={route.lessonId}
             lessons={lessons}
+            detailedLessons={detailedLessons}
             syntaxSections={syntaxSections}
             state={state}
             onUpdateState={updateState}

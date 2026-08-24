@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Lesson, SyntaxSection } from '../types/content';
+import { DetailedLessonMap, Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
 import { LessonHeader } from '../components/lesson/LessonHeader';
 import { LessonContent } from '../components/lesson/LessonContent';
+import { DetailedLessonContent } from '../components/lesson/DetailedLessonContent';
 import { QuickReviewContent } from '../components/lesson/QuickReviewContent';
 import { TableOfContents } from '../components/lesson/TableOfContents';
 import { LessonNotes } from '../components/lesson/LessonNotes';
 import { LessonPagination } from '../components/lesson/LessonPagination';
+import { selectDetailedLesson } from '../lib/detailedContent';
 
 interface LessonViewProps {
   lessonId: string;
   lessons: Lesson[];
+  detailedLessons: DetailedLessonMap;
   syntaxSections: SyntaxSection[];
   state: StudyStateV1;
   onUpdateState: (updater: (prev: StudyStateV1) => StudyStateV1) => void;
@@ -20,6 +23,7 @@ interface LessonViewProps {
 export const LessonView: React.FC<LessonViewProps> = ({
   lessonId,
   lessons,
+  detailedLessons,
   syntaxSections,
   state,
   onUpdateState,
@@ -31,6 +35,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const lesson = currentIndex !== -1 ? lessons[currentIndex] : lessons[0];
   const prevLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
+  const detailedLesson = selectDetailedLesson(lesson, detailedLessons);
+  const detailedToc = detailedLesson?.toc || lesson.toc;
 
   // Track recent lessons and last opened lesson
   useEffect(() => {
@@ -114,7 +120,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
         {/* Dynamic Mode Content */}
         {activeMode === 'detailed' ? (
-          <LessonContent sections={lesson.parsedSections} />
+          detailedLesson ? (
+            <DetailedLessonContent lesson={detailedLesson} />
+          ) : (
+            <LessonContent sections={lesson.parsedSections} />
+          )
         ) : (
           <QuickReviewContent
             syntaxSections={matchedSyntaxSections}
@@ -140,8 +150,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
       </div>
 
       {/* Sticky Table of Contents (Desktop) */}
-      {activeMode === 'detailed' && lesson.toc.length > 1 && (
-        <TableOfContents items={lesson.toc} />
+      {activeMode === 'detailed' && detailedToc.length > 1 && (
+        <TableOfContents items={detailedToc} />
       )}
     </div>
   );

@@ -8,9 +8,9 @@ A fast, responsive, personal Python study workspace and syntax reference built d
 
 ## 🎯 Features
 
-- **Live Content Pipeline**: Directly imports and parses `elzero_python_lessons_20_to_74.md` (55 lessons) and `python_syntax_reference_elzero_20_74.md` (67 syntax sections).
+- **Live Content Pipeline**: Directly imports and parses `elzero_python_lessons_20_to_74.md` (55 lessons), `python_syntax_reference_elzero_20_74.md` (67 syntax sections), and optional enriched Detailed Study Markdown.
 - **Dual Study Modes**:
-  - `Detailed Study`: High-contrast reading layout with bidirectional Arabic/English isolation and syntax-highlighted code blocks with copy feedback.
+  - `Detailed Study`: Enriched teaching content for Lessons 020–025 with explanations, semantic output/error blocks, comparisons, mental models, and a clean fallback to the original lesson content for Lessons 026–074.
   - `Quick Review`: Deterministic mapping displaying concise syntax rules, parameter breakdowns, and cheat sheet patterns directly within the active lesson.
 - **Syntax Reference Browser (`/#/reference`)**: Complete explorer covering all 67 sections categorized across 10 structured domains with real-time keyword search.
 - **Global Search (`Ctrl+K`)**: Ranked search prioritizing exact lesson numbers, method signatures (`append()`, `kwargs`, `filter()`, `lambda`), and syntax topics.
@@ -21,10 +21,12 @@ A fast, responsive, personal Python study workspace and syntax reference built d
 
 ## 📁 Source Markdown Files
 
-The workspace treats these two root files as the source of truth:
+The workspace preserves these two root files as the original course-wide sources:
 
 1. `elzero_python_lessons_20_to_74.md` — Detailed lesson explanations, code examples, and walkthroughs for lessons 20 through 74.
 2. `python_syntax_reference_elzero_20_74.md` — Condensed syntax reference, cheat sheets, mental models, and common pitfalls.
+
+Lessons 020–025 also have individually maintainable enriched teaching files in `src/content/detailed/`. They reuse the repository-owned training examples and add original explanations and verified expected outputs. If no enriched file exists, the application renders the original lesson content.
 
 ---
 
