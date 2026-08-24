@@ -10,7 +10,7 @@ A fast, responsive, personal Python study workspace and syntax reference built d
 
 - **Live Content Pipeline**: Directly imports and parses `elzero_python_lessons_20_to_74.md` (55 lessons), `python_syntax_reference_elzero_20_74.md` (67 syntax sections), and optional enriched Detailed Study Markdown.
 - **Dual Study Modes**:
-  - `Detailed Study`: Enriched teaching content for Lessons 020–025 with explanations, semantic output/error blocks, comparisons, mental models, and a clean fallback to the original lesson content for Lessons 026–074.
+  - `Detailed Study`: Enriched teaching content for all Lessons 020–074 with explanations, semantic result/error blocks, comparisons, mental models, and repository-owned examples.
   - `Quick Review`: Deterministic mapping displaying concise syntax rules, parameter breakdowns, and cheat sheet patterns directly within the active lesson.
 - **Syntax Reference Browser (`/#/reference`)**: Complete explorer covering all 67 sections categorized across 10 structured domains with real-time keyword search.
 - **Global Search (`Ctrl+K`)**: Ranked search prioritizing exact lesson numbers, method signatures (`append()`, `kwargs`, `filter()`, `lambda`), and syntax topics.
@@ -26,7 +26,7 @@ The workspace preserves these two root files as the original course-wide sources
 1. `elzero_python_lessons_20_to_74.md` — Detailed lesson explanations, code examples, and walkthroughs for lessons 20 through 74.
 2. `python_syntax_reference_elzero_20_74.md` — Condensed syntax reference, cheat sheets, mental models, and common pitfalls.
 
-Lessons 020–025 also have individually maintainable enriched teaching files in `src/content/detailed/`. They reuse the repository-owned training examples and add original explanations and verified expected outputs. If no enriched file exists, the application renders the original lesson content.
+Lessons 020–074 also have individually maintainable enriched teaching files in `src/content/detailed/`. They reuse the repository-owned training examples and add original explanations plus deterministic, interactive, or environment-dependent result labels. If an enriched file is absent for a future lesson, the application still renders the original lesson content.
 
 ---
 

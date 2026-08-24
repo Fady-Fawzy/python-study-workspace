@@ -44,6 +44,8 @@ function parseCallout(raw: string): Pick<DetailedContentBlock, 'type' | 'content
     prose: '',
     code: '',
     output: '',
+    'example-run': '',
+    'example-output': '',
     error: '',
     note: 'معلومة مهمة',
     warning: 'خطأ شائع',
@@ -94,11 +96,13 @@ export function parseDetailedLesson(rawMarkdown: string, expectedId?: string): D
 
     if (token.type === 'code') {
       const language = (token.lang || 'python').toLowerCase();
-      const type: DetailedBlockType = language === 'output'
-        ? 'output'
-        : language === 'error'
-          ? 'error'
-          : 'code';
+      const resultTypes: Partial<Record<string, DetailedBlockType>> = {
+        output: 'output',
+        'example-run': 'example-run',
+        'example-output': 'example-output',
+        error: 'error'
+      };
+      const type = resultTypes[language] || 'code';
       blocks.push({
         id: `detailed-${id}-${type}-${index}`,
         type,

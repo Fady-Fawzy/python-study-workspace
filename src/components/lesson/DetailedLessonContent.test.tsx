@@ -6,6 +6,26 @@ import { parseDetailedLesson } from '../../lib/detailedContent';
 import { DetailedLessonContent } from './DetailedLessonContent';
 
 describe('DetailedLessonContent', () => {
+  it('labels interactive and environment-dependent results accessibly', () => {
+    const lesson = parseDetailedLesson(`# 038 — User Input
+
+## تجربة الإدخال
+
+\`\`\`example-run
+Your name: Ahmed
+Ahmed
+\`\`\`
+
+\`\`\`example-output
+/home/user/project
+\`\`\`
+`, '038');
+    const html = renderToStaticMarkup(<DetailedLessonContent lesson={lesson} />);
+
+    expect(html).toContain('aria-label="EXAMPLE RUN"');
+    expect(html).toContain('aria-label="EXAMPLE OUTPUT"');
+  });
+
   it('renders semantic output separately from Python code with safe bidirectional direction', () => {
     const source = fs.readFileSync(
       path.resolve(process.cwd(), 'src/content/detailed/020.md'),

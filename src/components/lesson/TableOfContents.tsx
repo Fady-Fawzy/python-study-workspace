@@ -6,6 +6,23 @@ interface TableOfContentsProps {
   items: TocItem[];
 }
 
+const containsArabic = (text: string): boolean => /[\u0600-\u06ff]/.test(text);
+
+function TocLabel({ text }: { text: string }) {
+  const methodHeading = text.match(/^([A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?)\s*([—–-])\s*(.+)$/);
+
+  if (methodHeading && containsArabic(methodHeading[3])) {
+    return (
+      <>
+        <bdi dir="ltr">{methodHeading[1]}</bdi>
+        {' '}{methodHeading[2]}{' '}{methodHeading[3]}
+      </>
+    );
+  }
+
+  return <>{text}</>;
+}
+
 export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
   const [activeId, setActiveId] = useState<string>('');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -115,15 +132,17 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {items.map((item) => (
-                <button
+              {items.map((item) => {
+                const isArabic = containsArabic(item.text);
+                return (
+                  <button
                   key={item.id}
                   type="button"
                   onClick={() => scrollToHeading(item.id)}
                   style={{
                     display: 'block',
                     width: '100%',
-                    textAlign: 'left',
+                    textAlign: isArabic ? 'right' : 'left',
                     padding: '8px 12px',
                     borderRadius: 'var(--radius-md)',
                     backgroundColor: activeId === item.id ? 'var(--accent-primary-muted)' : 'transparent',
@@ -131,11 +150,12 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
                     fontSize: 'var(--text-sm)',
                     fontWeight: activeId === item.id ? 600 : 400
                   }}
-                  dir="auto"
+                  dir={isArabic ? 'rtl' : 'ltr'}
                 >
-                  {item.text}
+                  <TocLabel text={item.text} />
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -149,6 +169,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {items.map((item) => {
             const isActive = activeId === item.id;
+            const isArabic = containsArabic(item.text);
             return (
               <button
                 key={item.id}
@@ -157,7 +178,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
                 style={{
                   display: 'block',
                   width: '100%',
-                  textAlign: 'left',
+                  textAlign: isArabic ? 'right' : 'left',
                   padding: `4px 8px 4px ${item.level > 2 ? '16px' : '8px'}`,
                   borderRadius: 'var(--radius-sm)',
                   fontSize: 'var(--text-xs)',
@@ -170,9 +191,9 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
                   transition: 'all var(--transition-fast)'
                 }}
                 title={item.text}
-                dir="auto"
+                dir={isArabic ? 'rtl' : 'ltr'}
               >
-                {item.text}
+                <TocLabel text={item.text} />
               </button>
             );
           })}

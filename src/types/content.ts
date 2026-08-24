@@ -32,6 +32,8 @@ export type DetailedBlockType =
   | 'prose'
   | 'code'
   | 'output'
+  | 'example-run'
+  | 'example-output'
   | 'error'
   | 'note'
   | 'warning'

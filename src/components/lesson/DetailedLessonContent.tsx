@@ -16,12 +16,18 @@ function renderMarkdown(markdown: string, inline = false): string {
 }
 
 function ResultBlock({ block }: { block: DetailedContentBlock }) {
-  const isError = block.type === 'error';
-  const label = isError ? 'ERROR' : 'OUTPUT';
+  const labels: Partial<Record<DetailedContentBlock['type'], string>> = {
+    output: 'OUTPUT',
+    'example-run': 'EXAMPLE RUN',
+    'example-output': 'EXAMPLE OUTPUT',
+    error: 'ERROR'
+  };
+  const label = labels[block.type] || 'OUTPUT';
+  const resultClass = block.type === 'error' ? 'error-block' : 'output-block';
 
   return (
     <section
-      className={`detailed-result-block ${isError ? 'error-block' : 'output-block'}`}
+      className={`detailed-result-block ${resultClass}`}
       aria-label={label}
       dir="ltr"
     >
@@ -56,7 +62,7 @@ export const DetailedLessonContent: React.FC<DetailedLessonContentProps> = ({ le
         );
       }
 
-      if (block.type === 'output' || block.type === 'error') {
+      if (['output', 'example-run', 'example-output', 'error'].includes(block.type)) {
         return <ResultBlock key={block.id} block={block} />;
       }
 
