@@ -4584,6 +4584,18 @@ button, .nav-item, .clickable {
     line-height: var(--leading-tight);
   }
 
+  /* The Full View escape control is fixed, so keep it compact and reserve a
+     real reading gap instead of letting it cover the lesson header. */
+  .app-shell--full-view .app-content {
+    padding-block-start: calc(var(--safe-area-top) + var(--touch-target) + var(--space-5));
+  }
+
+  .app-shell--full-view .lesson-full-view-toggle {
+    inline-size: auto;
+    min-inline-size: var(--touch-target);
+    max-inline-size: calc(100vw - var(--page-gutter-compact) - var(--page-gutter-compact));
+  }
+
   .lesson-mode-switch {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

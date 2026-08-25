@@ -30,6 +30,15 @@ describe('markdown styling contracts', () => {
     );
   });
 
+  it('keeps Full View compact on phones and reserves space below the escape control', () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.app-shell--full-view\s+\.app-content\s*\{[^}]*padding-block-start:\s*calc\(var\(--safe-area-top\) \+ var\(--touch-target\) \+ var\(--space-5\)\);/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.app-shell--full-view\s+\.lesson-full-view-toggle\s*\{[^}]*inline-size:\s*auto;/s
+    );
+  });
+
   it('stacks Quick Review labels above content on narrow screens', () => {
     expect(stylesheet).toMatch(
       /@media \(max-width: 600px\)[\s\S]*?\.quick-review-entry__detail,[\s\S]*?\.quick-review-entry__code\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
