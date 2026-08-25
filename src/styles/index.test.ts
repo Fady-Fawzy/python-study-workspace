@@ -17,4 +17,16 @@ describe('markdown styling contracts', () => {
     expect(stylesheet).toMatch(/\.study-list\s*\{[^}]*margin-inline-start:/s);
     expect(stylesheet).not.toMatch(/\.callout-box\s*\{[^}]*border-left:/s);
   });
+
+  it('stacks lesson mode controls on phone widths while keeping them tappable', () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 430px\)[\s\S]*?\.lesson-mode-switch__tab\s*\{[^}]*flex-direction:\s*column;[^}]*min-block-size:\s*54px;/s
+    );
+  });
+
+  it('keeps the Full View escape control reachable during long reading sessions', () => {
+    expect(stylesheet).toMatch(
+      /\.app-shell--full-view\s+\.lesson-header__topline\s*\{[^}]*position:\s*sticky;[^}]*top:\s*var\(--safe-area-top\);/s
+    );
+  });
 });

@@ -206,6 +206,11 @@ p {
   max-inline-size: 100%;
 }
 
+.code-container:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-muted), var(--shadow-sm);
+}
+
 .code-header {
   display: flex;
   align-items: center;
@@ -1345,6 +1350,7 @@ p {
   padding-inline: var(--space-4);
   z-index: var(--z-sticky);
   backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 var(--border-subtle);
   inline-size: 100%;
   min-inline-size: 0;
   max-inline-size: 100%;
@@ -1840,6 +1846,17 @@ p {
 .app-shell--full-view .app-content {
   max-inline-size: min(100%, var(--content-wide-max-width));
   padding-block-start: max(var(--space-6), var(--safe-area-top));
+}
+
+.app-shell--full-view .lesson-header__topline {
+  position: sticky;
+  top: var(--safe-area-top);
+  z-index: var(--z-sticky);
+  margin-block-start: calc(var(--space-2) * -1);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--border-subtle);
+  background-color: var(--bg-app);
+  box-shadow: 0 8px 18px -18px var(--text-primary);
 }
 
 .app-shell--full-view .lesson-layout {
@@ -4504,7 +4521,9 @@ button, .nav-item, .clickable {
   }
 
   .lesson-header__title {
+    max-inline-size: 100%;
     font-size: var(--text-lg);
+    line-height: var(--leading-tight);
   }
 
   .lesson-mode-switch {
@@ -4520,6 +4539,7 @@ button, .nav-item, .clickable {
   .lesson-mode-switch__tab {
     min-inline-size: 0;
     padding-inline: var(--space-2);
+    line-height: var(--leading-tight);
   }
 
   .quick-review__notice {
@@ -4684,21 +4704,26 @@ button, .nav-item, .clickable {
   .lesson-header__actions {
     inline-size: 100%;
     margin-inline-start: 0;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
   }
 
   .lesson-header__secondary-actions {
-    flex: 1 1 170px;
+    display: grid;
+    grid-template-columns: var(--touch-target) minmax(0, 1fr);
+    gap: var(--space-2);
+    inline-size: 100%;
     min-inline-size: 0;
   }
 
   .lesson-header__secondary-actions .lesson-complete-button {
+    inline-size: 100%;
     min-inline-size: 0;
-    flex: 1;
   }
 
   .lesson-full-view-toggle {
-    flex: 1 1 112px;
+    inline-size: 100%;
     min-inline-size: 0;
   }
 
@@ -4707,8 +4732,13 @@ button, .nav-item, .clickable {
   }
 
   .lesson-mode-switch__tab {
-    gap: 6px;
+    flex-direction: column;
+    min-block-size: 54px;
+    gap: 2px;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-1);
     font-size: var(--text-xs);
+    line-height: 1.1;
   }
 
   .quick-review-card {
@@ -4771,12 +4801,7 @@ button, .nav-item, .clickable {
 }
 
 @media (max-width: 360px) {
-  .lesson-header__secondary-actions,
-  .lesson-full-view-toggle {
-    inline-size: 100%;
-  }
-
-  .lesson-full-view-toggle {
-    flex-basis: auto;
+  .lesson-header__actions {
+    gap: var(--space-2);
   }
 }
