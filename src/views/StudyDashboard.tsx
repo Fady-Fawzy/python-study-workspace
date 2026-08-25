@@ -11,6 +11,7 @@ import {
   Play
 } from 'lucide-react';
 import { LESSON_CATEGORIES } from '../lib/lessonMapping';
+import { readReadingPosition } from '../lib/readingPosition';
 import { getStudyActivitySummary, readStudyActivity, StudyActivity } from '../lib/studyActivity';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
@@ -59,6 +60,8 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
 
   const savedLesson = lessons.find((lesson) => lesson.id === state.lastOpenedLessonId);
   const lastLesson = savedLesson ?? lessons[0];
+  const hasSavedLesson = Boolean(savedLesson);
+  const hasSavedReadingPosition = Boolean(lastLesson && readReadingPosition(lastLesson.id) > 0);
 
   const recentLessons = state.recentLessonIds
     .map((id) => lessons.find((lesson) => lesson.id === id))
@@ -84,15 +87,22 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
             </div>
             <h1 className="dashboard-continue__title">{lastLesson.title}</h1>
             <p className="dashboard-continue__meta">{lastLesson.category}</p>
+            <p className="dashboard-continue__resume-note">
+              {hasSavedReadingPosition
+                ? 'Saved reading position ready to resume.'
+                : hasSavedLesson
+                  ? 'Continue from this lesson whenever you are ready.'
+                  : 'Start your first lesson and build your study trail.'}
+            </p>
           </div>
 
           <button
             type="button"
             className="dashboard-primary-action"
-            aria-label={`Open Lesson ${lastLesson.id}: ${lastLesson.title}`}
+            aria-label={`${hasSavedLesson ? 'Resume' : 'Start'} Lesson ${lastLesson.id}: ${lastLesson.title}`}
             onClick={() => onNavigate(`/lesson/${lastLesson.id}`)}
           >
-            <span>Open Lesson</span>
+            <span>{hasSavedLesson ? 'Resume Lesson' : 'Start Lesson'}</span>
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </section>

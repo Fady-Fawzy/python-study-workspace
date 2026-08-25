@@ -33,7 +33,7 @@ const lessons: Lesson[] = [
 const mixedDirectionNote =
   'استخدم reduce() مع lambda ثم راجع very_long_python_identifier_that_must_wrap_safely_after_saving_the_note.';
 
-const baseState: StudyStateV1 = {
+const baseState: StudyStateV1 & { lessonNoteUpdatedAt: Record<string, string> } = {
   version: 1,
   completedLessons: [],
   bookmarkedLessons: [],
@@ -41,6 +41,10 @@ const baseState: StudyStateV1 = {
   lessonNotes: {
     '020': 'راجع ترتيب العمليات قبل الحل.',
     '074': mixedDirectionNote
+  },
+  lessonNoteUpdatedAt: {
+    '020': '2026-08-24T09:00:00.000Z',
+    '074': '2026-08-25T09:00:00.000Z'
   },
   lastOpenedLessonId: null,
   recentLessonIds: [],
@@ -69,6 +73,33 @@ afterEach(() => {
 });
 
 describe('notes view', () => {
+  it('filters notes by category and uses AND matching for multi-word searches', async () => {
+    const user = userEvent.setup();
+    renderNotes();
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /filter notes by category/i }),
+      'Built-In & Functional Tools'
+    );
+    expect(screen.getByRole('article', { name: /lesson 074/i })).toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: /lesson 020/i })).not.toBeInTheDocument();
+
+    const search = screen.getByRole('searchbox', { name: /search study notes/i });
+    await user.clear(search);
+    await user.type(search, 'functional reduce');
+    expect(screen.getByRole('article', { name: /lesson 074/i })).toBeInTheDocument();
+  });
+
+  it('sorts by note update time and reports note statistics', () => {
+    renderNotes();
+
+    const articles = screen.getAllByRole('article');
+    expect(articles[0]).toHaveAccessibleName(/lesson 074/i);
+    expect(screen.getByText(/2 notes/i)).toBeInTheDocument();
+    expect(screen.getByText(/characters/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/updated/i)).toHaveLength(2);
+  });
+
   it('filters notes by title, category, and note content from an accessible search field', async () => {
     const user = userEvent.setup();
     renderNotes();
@@ -110,6 +141,9 @@ describe('notes view', () => {
     const updater = onUpdateState.mock.calls[0][0];
     expect(updater(baseState).lessonNotes).toEqual({
       '020': 'راجع ترتيب العمليات قبل الحل.'
+    });
+    expect((updater(baseState) as typeof baseState).lessonNoteUpdatedAt).toEqual({
+      '020': '2026-08-24T09:00:00.000Z'
     });
   });
 

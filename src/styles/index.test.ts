@@ -77,4 +77,34 @@ describe('markdown styling contracts', () => {
       /@media \(max-width: 360px\)[\s\S]*?\.lesson-reading-controls\s*\{[^}]*inset-inline-end:\s*max\(/s
     );
   });
+
+  it('keeps Notes 2.0 filters readable and tappable on phones', () => {
+    expect(stylesheet).toMatch(
+      /\.notes-toolbar\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto auto;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.notes-toolbar\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.notes-select select\s*\{[^}]*min-block-size:\s*var\(--touch-target\);/s
+    );
+  });
+
+  it('makes lesson syntax links keyboard and touch friendly', () => {
+    expect(stylesheet).toMatch(
+      /\.lesson-syntax-links\s*\{[^}]*min-inline-size:\s*0;[^}]*max-inline-size:\s*var\(--reading-measure\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-syntax-links__item\s*\{[^}]*min-block-size:\s*var\(--touch-target\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-syntax-links__copy\s*\{[^}]*min-inline-size:\s*0;[^}]*overflow-wrap:\s*anywhere;/s
+    );
+  });
+
+  it('contains long surfaces without removing internal code scrolling', () => {
+    expect(stylesheet).toMatch(/\.app-main-wrapper\s*\{[^}]*overflow-x:\s*clip;/s);
+    expect(stylesheet).toMatch(/\.dashboard-topic,[\s\S]*?content-visibility:\s*auto;/s);
+    expect(stylesheet).toMatch(/contain-intrinsic-size:\s*auto\s+180px;/s);
+  });
 });

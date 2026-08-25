@@ -4,6 +4,7 @@ export interface StudyStateV1 {
   bookmarkedLessons: string[];      // Array of lesson IDs e.g. ["022", "056"]
   bookmarkedSyntax: number[];       // Array of syntax section IDs e.g. [3, 26]
   lessonNotes: Record<string, string>; // lessonId -> note text
+  lessonNoteUpdatedAt?: Record<string, string>; // lessonId -> last autosave timestamp
   lastOpenedLessonId: string | null;  // e.g. "020"
   recentLessonIds: string[];         // Max 10 recent lesson IDs
   theme: 'dark' | 'light' | 'system';

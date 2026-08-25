@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, type FC } from 'react';
 import lessonsRaw from '../elzero_python_lessons_20_to_74.md?raw';
 import syntaxRaw from '../python_syntax_reference_elzero_20_74.md?raw';
 import { parseLessons, parseSyntaxReference } from './lib/contentParser';
@@ -13,10 +13,34 @@ import { applyThemePreference } from './lib/theme';
 import { StudyStateV1 } from './types/state';
 import { AppShell } from './components/layout/AppShell';
 import { StudyDashboard } from './views/StudyDashboard';
-import { LessonView } from './views/LessonView';
-import { SyntaxReferenceView } from './views/SyntaxReferenceView';
-import { BookmarksView } from './views/BookmarksView';
-import { NotesView } from './views/NotesView';
+
+// Route-level chunks keep the dashboard shell responsive before a long lesson,
+// reference notebook, or saved-data view is needed.
+const LessonView = lazy(async () => {
+  const module = await import('./views/LessonView');
+  return { default: module.LessonView };
+});
+
+const SyntaxReferenceView = lazy(async () => {
+  const module = await import('./views/SyntaxReferenceView');
+  return { default: module.SyntaxReferenceView };
+});
+
+const BookmarksView = lazy(async () => {
+  const module = await import('./views/BookmarksView');
+  return { default: module.BookmarksView };
+});
+
+const NotesView = lazy(async () => {
+  const module = await import('./views/NotesView');
+  return { default: module.NotesView };
+});
+
+export const RouteLoading: FC = () => (
+  <div className="route-loading" role="status" aria-live="polite">
+    Loading study view…
+  </div>
+);
 
 export function App() {
   // 1. Parse Markdown Content
@@ -185,7 +209,9 @@ export function App() {
       onThemeChange={handleThemeChange}
       isFullView={route.view === 'lesson' && isLessonFullView}
     >
-      {renderView()}
+      <Suspense fallback={<RouteLoading />}>
+        {renderView()}
+      </Suspense>
     </AppShell>
   );
 }

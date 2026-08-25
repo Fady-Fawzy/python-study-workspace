@@ -15,8 +15,24 @@ interface SavedNote {
   lessonId: string;
   lessonTitle: string;
   lessonCategory: string;
+  lessonNumber: number;
   note: string;
+  updatedAt: string | null;
 }
+
+type NotesSort = 'newest' | 'oldest' | 'lesson';
+
+const isValidTimestamp = (value: string | undefined): value is string => (
+  Boolean(value) && !Number.isNaN(Date.parse(value as string))
+);
+
+const formatUpdatedAt = (value: string | null): string | null => {
+  if (!value || !isValidTimestamp(value)) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(new Date(value));
+};
 
 export const NotesView: React.FC<NotesViewProps> = ({
   lessons,
@@ -25,6 +41,8 @@ export const NotesView: React.FC<NotesViewProps> = ({
   onUpdateState
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortOrder, setSortOrder] = useState<NotesSort>('newest');
 
   const lessonsWithNotes: SavedNote[] = Object.entries(state.lessonNotes)
     .filter(([, note]) => typeof note === 'string' && note.trim().length > 0)
@@ -34,17 +52,40 @@ export const NotesView: React.FC<NotesViewProps> = ({
         lessonId,
         lessonTitle: lesson ? lesson.title : `Lesson ${lessonId}`,
         lessonCategory: lesson ? lesson.category : 'Python',
-        note
+        lessonNumber: lesson?.number ?? (Number.parseInt(lessonId, 10) || 0),
+        note,
+        updatedAt: isValidTimestamp(state.lessonNoteUpdatedAt?.[lessonId])
+          ? state.lessonNoteUpdatedAt?.[lessonId] || null
+          : null
       };
     });
 
-  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
-  const filteredNotes = lessonsWithNotes.filter((item) => {
-    if (!normalizedQuery) return true;
+  const categories = [...new Set(lessonsWithNotes.map((item) => item.lessonCategory))].sort((a, b) => a.localeCompare(b));
+  const queryTerms = searchQuery
+    .trim()
+    .toLocaleLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  const filteredNotes = lessonsWithNotes
+    .filter((item) => {
+      if (categoryFilter !== 'All' && item.lessonCategory !== categoryFilter) return false;
+      if (queryTerms.length === 0) return true;
 
-    return [item.lessonId, item.lessonTitle, item.lessonCategory, item.note]
-      .some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
-  });
+      const searchableText = [item.lessonId, item.lessonTitle, item.lessonCategory, item.note]
+        .join(' ')
+        .toLocaleLowerCase();
+      return queryTerms.every((term) => searchableText.includes(term));
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'lesson') return a.lessonNumber - b.lessonNumber;
+
+      const aTime = a.updatedAt ? Date.parse(a.updatedAt) : 0;
+      const bTime = b.updatedAt ? Date.parse(b.updatedAt) : 0;
+      const timeDifference = sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
+      return timeDifference || b.lessonNumber - a.lessonNumber;
+    });
+
+  const totalCharacters = lessonsWithNotes.reduce((total, item) => total + item.note.length, 0);
 
   const handleDeleteNote = (lessonId: string) => {
     if (!window.confirm(`Delete note for Lesson ${lessonId}?`)) return;
@@ -52,7 +93,9 @@ export const NotesView: React.FC<NotesViewProps> = ({
     onUpdateState((prev) => {
       const lessonNotes = { ...prev.lessonNotes };
       delete lessonNotes[lessonId];
-      return { ...prev, lessonNotes };
+      const lessonNoteUpdatedAt = { ...(prev.lessonNoteUpdatedAt || {}) };
+      delete lessonNoteUpdatedAt[lessonId];
+      return { ...prev, lessonNotes, lessonNoteUpdatedAt };
     });
   };
 
@@ -67,29 +110,61 @@ export const NotesView: React.FC<NotesViewProps> = ({
           All personal takeaways, gotchas, and reminders written across lessons
           {' '}({lessonsWithNotes.length} {lessonsWithNotes.length === 1 ? 'lesson' : 'lessons'} with notes).
         </p>
+        <div className="notes-summary" aria-label="Notes summary">
+          <span>{lessonsWithNotes.length} {lessonsWithNotes.length === 1 ? 'note' : 'notes'}</span>
+          <span>{totalCharacters} characters</span>
+          <span aria-live="polite">{filteredNotes.length} shown</span>
+        </div>
       </header>
 
       {lessonsWithNotes.length > 0 && (
-        <div className="notes-search" role="search" aria-label="Search study notes">
-          <label className="visually-hidden" htmlFor="notes-search-input">Search study notes</label>
-          <Search size={18} aria-hidden="true" />
-          <input
-            id="notes-search-input"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search titles, topics, or note text..."
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="notes-search__clear"
-              aria-label="Clear search"
-              onClick={() => setSearchQuery('')}
+        <div className="notes-toolbar" aria-label="Filter and search study notes">
+          <div className="notes-search" role="search" aria-label="Search study notes">
+            <label className="visually-hidden" htmlFor="notes-search-input">Search study notes</label>
+            <Search size={18} aria-hidden="true" />
+            <input
+              id="notes-search-input"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search titles, topics, or note text..."
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="notes-search__clear"
+                aria-label="Clear search"
+                onClick={() => setSearchQuery('')}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <label className="notes-select">
+            <span>Category</span>
+            <select
+              aria-label="Filter notes by category"
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
             >
-              Clear
-            </button>
-          )}
+              <option value="All">All categories</option>
+              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+
+          <label className="notes-select">
+            <span>Sort</span>
+            <select
+              aria-label="Sort study notes"
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value as NotesSort)}
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="lesson">Lesson order</option>
+            </select>
+          </label>
         </div>
       )}
 
@@ -126,6 +201,11 @@ export const NotesView: React.FC<NotesViewProps> = ({
                     <div className="saved-note__title-wrap">
                       <h2 id={titleId}><bdi>{item.lessonTitle}</bdi></h2>
                       <p><bdi>{item.lessonCategory}</bdi></p>
+                      {formatUpdatedAt(item.updatedAt) && (
+                        <time className="saved-note__updated" dateTime={item.updatedAt || undefined}>
+                          Updated {formatUpdatedAt(item.updatedAt)}
+                        </time>
+                      )}
                     </div>
                   </div>
 

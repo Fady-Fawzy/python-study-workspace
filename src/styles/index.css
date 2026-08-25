@@ -1421,6 +1421,7 @@ p {
   min-height: 100vh;
   inline-size: 100%;
   max-inline-size: 100%;
+  overflow-x: clip;
 }
 
 .app-header {
@@ -3519,6 +3520,67 @@ button, .nav-item, .clickable {
   color: var(--accent-danger);
 }
 
+.notes-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.notes-summary span {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 28px;
+  padding-inline: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface-raised);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 650;
+}
+
+.notes-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.notes-select {
+  display: flex;
+  min-inline-size: min(100%, 180px);
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 650;
+}
+
+.notes-select span {
+  padding-inline-start: 2px;
+}
+
+.notes-select select {
+  inline-size: 100%;
+  min-block-size: var(--touch-target);
+  min-inline-size: 0;
+  padding-inline: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.notes-select select:hover,
+.notes-select select:focus-visible {
+  border-color: var(--border-active);
+}
+
 .notes-search {
   display: flex;
   align-items: center;
@@ -3643,6 +3705,14 @@ button, .nav-item, .clickable {
   overflow-wrap: anywhere;
 }
 
+.saved-note__updated {
+  display: block;
+  margin-block-start: 3px;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  line-height: var(--leading-normal);
+}
+
 .saved-note__actions {
   flex: 0 0 auto;
   justify-content: flex-end;
@@ -3684,6 +3754,116 @@ button, .nav-item, .clickable {
   background-color: var(--bg-surface-raised);
   color: var(--text-secondary);
   font-size: var(--text-sm);
+}
+
+/* Cross-links keep the lesson and the reference notebook connected without
+   interrupting the main reading flow. */
+.lesson-syntax-links {
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: var(--reading-measure);
+  margin: var(--space-8) auto 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.lesson-syntax-links__header {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+  color: var(--accent-primary);
+}
+
+.lesson-syntax-links__header h2 {
+  min-inline-size: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.lesson-syntax-links__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.lesson-syntax-links__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-inline-size: 0;
+  min-block-size: var(--touch-target);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface-raised);
+  color: var(--text-primary);
+  text-align: start;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.lesson-syntax-links__item:hover {
+  border-color: var(--border-active);
+  background-color: var(--bg-surface-hover);
+  color: var(--accent-primary);
+}
+
+.lesson-syntax-links__number {
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.lesson-syntax-links__copy {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
+.lesson-syntax-links__copy strong {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.lesson-syntax-links__copy small {
+  margin-block-start: 2px;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  line-height: var(--leading-normal);
+}
+
+.lesson-syntax-links__item > svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* Let long dashboard/reference lists skip off-screen paint while retaining a
+   stable estimate for smooth scrolling and anchor navigation. */
+.dashboard-topic,
+.saved-note,
+.syntax-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
+.route-loading {
+  display: grid;
+  min-block-size: min(50vh, 360px);
+  place-items: center;
+  padding: var(--space-8);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
 }
 
 .empty-state {
@@ -5159,6 +5339,15 @@ button, .nav-item, .clickable {
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .notes-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .notes-select {
+    inline-size: 100%;
   }
 
   .lesson-pagination__link {

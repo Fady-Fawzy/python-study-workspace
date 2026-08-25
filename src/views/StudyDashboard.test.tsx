@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { writeReadingPosition } from '../lib/readingPosition';
 import { Lesson } from '../types/content';
 import { StudyStateV1 } from '../types/state';
 import { StudyDashboard } from './StudyDashboard';
@@ -87,17 +88,21 @@ afterEach(cleanup);
 describe('study dashboard', () => {
   it('resumes the saved lesson and falls back to the first available lesson', async () => {
     const user = userEvent.setup();
+    localStorage.clear();
+    writeReadingPosition('074', 480);
     const onNavigate = renderDashboard({ lastOpenedLessonId: '074' });
 
     const continueRegion = screen.getByRole('region', { name: /continue studying/i });
     expect(within(continueRegion).getByText('Reduce Function')).toBeInTheDocument();
-    await user.click(within(continueRegion).getByRole('button', { name: /open lesson 074/i }));
+    expect(within(continueRegion).getByText(/saved reading position/i)).toBeInTheDocument();
+    await user.click(within(continueRegion).getByRole('button', { name: /resume lesson 074/i }));
     expect(onNavigate).toHaveBeenLastCalledWith('/lesson/074');
 
     cleanup();
     const fallbackNavigate = renderDashboard({ lastOpenedLessonId: '999' });
     const fallbackRegion = screen.getByRole('region', { name: /continue studying/i });
-    await user.click(within(fallbackRegion).getByRole('button', { name: /open lesson 020/i }));
+    expect(within(fallbackRegion).getByText(/start your first lesson/i)).toBeInTheDocument();
+    await user.click(within(fallbackRegion).getByRole('button', { name: /start lesson 020/i }));
     expect(fallbackNavigate).toHaveBeenLastCalledWith('/lesson/020');
   });
 

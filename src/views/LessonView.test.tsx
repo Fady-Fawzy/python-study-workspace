@@ -1,7 +1,7 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { Lesson } from '../types/content';
+import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
 import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
 import { getStudyActivitySummary, readStudyActivity } from '../lib/studyActivity';
@@ -45,6 +45,27 @@ const practiceLesson = {
     explanation: 'Addition produces 2.'
   }]
 };
+
+const relatedSyntaxSections: SyntaxSection[] = [
+  {
+    id: 1,
+    number: 1,
+    title: 'Arithmetic Operators',
+    category: 'Operators & Expressions',
+    rawMarkdown: '',
+    methods: [],
+    subsections: []
+  },
+  {
+    id: 2,
+    number: 2,
+    title: 'Lists',
+    category: 'Data Structures',
+    rawMarkdown: '',
+    methods: ['append'],
+    subsections: []
+  }
+];
 
 describe('LessonView', () => {
   it('starts in the persisted mode and persists a new mode selection', async () => {
@@ -145,6 +166,43 @@ describe('LessonView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Full View' }));
     expect(onFullViewChange).toHaveBeenCalledWith(true);
+  });
+
+  it('records a timestamp when a personal note is autosaved', () => {
+    vi.useFakeTimers();
+    try {
+      window.scrollTo = vi.fn();
+      const onUpdateState = vi.fn();
+
+      render(
+        <LessonView
+          lessonId="020"
+          lessons={[lesson]}
+          detailedLessons={{}}
+          syntaxSections={[]}
+          state={{ ...state, preferredMode: 'detailed' }}
+          onUpdateState={onUpdateState}
+          onNavigate={vi.fn()}
+        />
+      );
+
+      act(() => {
+        fireEvent.change(screen.getByRole('textbox', { name: /personal study notes/i }), {
+          target: { value: 'Review operator precedence.' }
+        });
+        vi.advanceTimersByTime(600);
+      });
+
+      const savedStates = onUpdateState.mock.calls.map(([updater]) => updater(state));
+      expect(savedStates).toContainEqual(expect.objectContaining({
+        lessonNoteUpdatedAt: expect.objectContaining({ '020': expect.any(String) })
+      }));
+    } finally {
+      act(() => {
+        vi.runOnlyPendingTimers();
+      });
+      vi.useRealTimers();
+    }
   });
 
   it('renders jump controls outside the lesson reading content', () => {
@@ -263,6 +321,31 @@ describe('LessonView', () => {
         }
       }
     }));
+  });
+
+  it('exposes every related syntax reference link from the lesson', async () => {
+    window.scrollTo = vi.fn();
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+    const lessonWithSyntax = { ...lesson, quickReviewSectionIds: [1, 2] };
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lessonWithSyntax]}
+        detailedLessons={{}}
+        syntaxSections={relatedSyntaxSections}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={onNavigate}
+      />
+    );
+
+    const related = screen.getByRole('navigation', { name: /related syntax reference/i });
+    expect(related).toHaveTextContent('Arithmetic Operators');
+    expect(related).toHaveTextContent('Lists');
+    await user.click(screen.getByRole('button', { name: /open syntax reference section 2/i }));
+    expect(onNavigate).toHaveBeenCalledWith('/reference?section=2');
   });
 
   it('does not expose Practice for a lesson without a mapped bank', () => {

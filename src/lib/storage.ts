@@ -24,6 +24,17 @@ const sanitizeLessonNotes = (value: unknown): Record<string, string> => {
   );
 };
 
+const sanitizeLessonNoteUpdatedAt = (value: unknown): Record<string, string> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => (
+      entry[0].trim().length > 0
+      && typeof entry[1] === 'string'
+      && !Number.isNaN(Date.parse(entry[1]))
+    ))
+  );
+};
+
 const isPlainRecord = (value: unknown): value is Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
@@ -70,6 +81,7 @@ const sanitizeState = (candidate: Record<string, unknown>): StudyStateV1 => ({
   bookmarkedLessons: uniqueStrings(candidate.bookmarkedLessons),
   bookmarkedSyntax: uniqueNumbers(candidate.bookmarkedSyntax),
   lessonNotes: sanitizeLessonNotes(candidate.lessonNotes),
+  lessonNoteUpdatedAt: sanitizeLessonNoteUpdatedAt(candidate.lessonNoteUpdatedAt),
   lastOpenedLessonId: typeof candidate.lastOpenedLessonId === 'string' || candidate.lastOpenedLessonId === null
     ? candidate.lastOpenedLessonId
     : '020',
@@ -92,6 +104,7 @@ export const INITIAL_STATE: StudyStateV1 = {
   bookmarkedLessons: [],
   bookmarkedSyntax: [],
   lessonNotes: {},
+  lessonNoteUpdatedAt: {},
   lastOpenedLessonId: '020',
   recentLessonIds: ['020'],
   theme: 'system',

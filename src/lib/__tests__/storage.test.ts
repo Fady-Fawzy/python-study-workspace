@@ -24,13 +24,16 @@ describe('Storage Layer & Persistence', () => {
   });
 
   it('performs lossless round-trip save and load', () => {
-    const customState: StudyStateV1 = {
+    const customState: StudyStateV1 & { lessonNoteUpdatedAt: Record<string, string> } = {
       version: 1,
       completedLessons: ['020', '021', '056'],
       bookmarkedLessons: ['056'],
       bookmarkedSyntax: [26, 27],
       lessonNotes: {
         '056': 'Functions use the def keyword and return values.'
+      },
+      lessonNoteUpdatedAt: {
+        '056': '2026-08-25T08:30:00.000Z'
       },
       lastOpenedLessonId: '056',
       recentLessonIds: ['056', '021', '020'],
@@ -55,6 +58,7 @@ describe('Storage Layer & Persistence', () => {
     expect(loaded.bookmarkedLessons).toEqual(['056']);
     expect(loaded.bookmarkedSyntax).toEqual([26, 27]);
     expect(loaded.lessonNotes['056']).toBe('Functions use the def keyword and return values.');
+    expect(loaded.lessonNoteUpdatedAt).toEqual({ '056': '2026-08-25T08:30:00.000Z' });
     expect(loaded.lastOpenedLessonId).toBe('056');
     expect(loaded.theme).toBe('dark');
     expect(loaded.preferredMode).toBe('quickReview');
@@ -124,6 +128,11 @@ describe('Storage Layer & Persistence', () => {
         '021': null,
         '022': ['would crash trim'],
         '023': 23
+      },
+      lessonNoteUpdatedAt: {
+        '020': '2026-08-25T08:00:00.000Z',
+        '021': 'not-a-date',
+        '022': 42
       }
     }));
 
@@ -133,6 +142,7 @@ describe('Storage Layer & Persistence', () => {
     expect(loaded.bookmarkedSyntax).toEqual([3]);
     expect(loaded.recentLessonIds).toEqual(['020', '021']);
     expect(loaded.lessonNotes).toEqual({ '020': 'safe note' });
+    expect(loaded.lessonNoteUpdatedAt).toEqual({ '020': '2026-08-25T08:00:00.000Z' });
     expect(() => Object.values(loaded.lessonNotes).filter(note => note.trim())).not.toThrow();
   });
 

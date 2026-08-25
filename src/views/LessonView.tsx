@@ -11,6 +11,7 @@ import { TableOfContents } from '../components/lesson/TableOfContents';
 import { LessonReadingControls } from '../components/lesson/LessonReadingControls';
 import { LessonNotes } from '../components/lesson/LessonNotes';
 import { LessonPagination } from '../components/lesson/LessonPagination';
+import { LessonSyntaxLinks } from '../components/lesson/LessonSyntaxLinks';
 import { selectDetailedLesson } from '../lib/detailedContent';
 import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
 import { recordStudyActivity } from '../lib/studyActivity';
@@ -168,7 +169,15 @@ export const LessonView: React.FC<LessonViewProps> = ({
       lessonNotes: {
         ...prev.lessonNotes,
         [lId]: noteText
-      }
+      },
+      lessonNoteUpdatedAt: noteText.trim()
+        ? {
+            ...(prev.lessonNoteUpdatedAt || {}),
+            [lId]: new Date().toISOString()
+          }
+        : Object.fromEntries(
+            Object.entries(prev.lessonNoteUpdatedAt || {}).filter(([lessonKey]) => lessonKey !== lId)
+          )
     }));
   };
 
@@ -239,6 +248,11 @@ export const LessonView: React.FC<LessonViewProps> = ({
             />
           ) : null}
         </div>
+
+        <LessonSyntaxLinks
+          sections={matchedSyntaxSections}
+          onNavigate={onNavigate}
+        />
 
         {/* Personal Study Notes */}
         <LessonNotes
