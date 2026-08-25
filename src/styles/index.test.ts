@@ -29,4 +29,10 @@ describe('markdown styling contracts', () => {
       /\.app-shell--full-view\s+\.lesson-full-view-toggle\s*\{[^}]*position:\s*fixed;[^}]*inset-block-start:\s*calc\(var\(--safe-area-top\) \+ var\(--space-3\)\);/s
     );
   });
+
+  it('stacks Quick Review labels above content on narrow screens', () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.quick-review-entry__detail,[\s\S]*?\.quick-review-entry__code\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
+    );
+  });
 });

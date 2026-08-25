@@ -9,6 +9,14 @@ interface QuickReviewContentProps {
   onOpenFullReference?: (sectionId: number) => void;
 }
 
+function isExampleHeading(heading: string): boolean {
+  return /\bexample(?:s)?\b|demo/i.test(heading);
+}
+
+function getEntryTitle(heading: string): string {
+  return heading.trim() || 'Core syntax';
+}
+
 function renderFormattedHtml(text: string): string {
   try {
     const rawHtml = marked.parse(text) as string;
@@ -36,7 +44,7 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
       <div className="quick-review__notice">
         <div className="quick-review__notice-copy">
           <Zap size={16} aria-hidden="true" />
-          <span>Showing concise syntax and review rules from Syntax Reference</span>
+          <span>Scan the element, what it does, and the syntax you need.</span>
         </div>
         {onOpenFullReference && (
           <button
@@ -56,34 +64,55 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
             <h2 id={`quick-review-${sec.id}`} dir="ltr">
               <bdi dir="ltr">#{sec.id})</bdi> {sec.title}
             </h2>
-            <span className="quick-review-card__category" dir="ltr">{sec.category}</span>
+            <div className="quick-review-card__meta" dir="ltr">
+              <span className="quick-review-card__category">{sec.category}</span>
+              <span className="quick-review-card__count">
+                {sec.subsections.length} {sec.subsections.length === 1 ? 'item' : 'items'}
+              </span>
+            </div>
           </header>
 
           <div className="quick-review-card__body">
-            {sec.subsections.map(sub => (
-              <div key={sub.id} className="quick-review-subsection">
-                {sub.heading && (
-                  <h3 dir="ltr" className="prose-text">{sub.heading}</h3>
-                )}
+            {sec.subsections.map(sub => {
+              const hasDescription = Boolean(sub.content.trim());
+              const isExample = isExampleHeading(sub.heading);
 
-                {sub.content.trim() && (
-                  <div
-                    dir="ltr"
-                    className="quick-review-subsection__content prose-text"
-                    dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
-                  />
-                )}
+              return (
+                <article key={sub.id} className="quick-review-entry">
+                  <header className="quick-review-entry__header">
+                    <span className="quick-review-entry__marker" aria-hidden="true">•</span>
+                    <h3 dir="ltr">{getEntryTitle(sub.heading)}</h3>
+                  </header>
 
-                {sub.codeBlocks.map((cb, idx) => (
-                  <CodeBlock
-                    key={idx}
-                    code={cb.code}
-                    language={cb.language || 'python'}
-                    title={cb.title}
-                  />
-                ))}
-              </div>
-            ))}
+                  {hasDescription && (
+                    <div className="quick-review-entry__detail">
+                      <span className="quick-review-entry__label">What it does</span>
+                      <div
+                        dir="ltr"
+                        className="quick-review-subsection__content prose-text"
+                        dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
+                      />
+                    </div>
+                  )}
+
+                  {sub.codeBlocks.length > 0 && (
+                    <div className="quick-review-entry__code">
+                      <span className="quick-review-entry__label">{isExample ? 'Example' : 'Syntax'}</span>
+                      <div className="quick-review-entry__code-stack">
+                        {sub.codeBlocks.map((cb, idx) => (
+                          <CodeBlock
+                            key={idx}
+                            code={cb.code}
+                            language={cb.language || 'python'}
+                            title={cb.title}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       ))}

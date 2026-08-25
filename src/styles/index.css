@@ -1175,7 +1175,9 @@ p {
 .quick-review__notice,
 .quick-review__notice-copy,
 .quick-review__reference-link,
-.quick-review-card__header {
+.quick-review-card__header,
+.quick-review-card__meta,
+.quick-review-entry__header {
   display: flex;
   align-items: center;
   min-inline-size: 0;
@@ -1248,6 +1250,12 @@ p {
   overflow-wrap: anywhere;
 }
 
+.quick-review-card__meta {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+}
+
 .quick-review-card__category {
   padding: 3px var(--space-2);
   border-radius: var(--radius-sm);
@@ -1258,30 +1266,80 @@ p {
   overflow-wrap: anywhere;
 }
 
-.quick-review-card__body,
-.quick-review-subsection {
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 0;
+.quick-review-card__count {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  white-space: nowrap;
 }
 
 .quick-review-card__body {
-  gap: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  gap: 0;
 }
 
-.quick-review-subsection {
-  gap: var(--space-2);
+.quick-review-entry {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
 }
 
-.quick-review-subsection + .quick-review-subsection {
-  padding-block-start: var(--space-4);
+.quick-review-entry:first-child {
+  padding-block-start: 0;
+}
+
+.quick-review-entry + .quick-review-entry {
   border-block-start: 1px solid var(--border-subtle);
 }
 
-.quick-review-subsection h3 {
+.quick-review-entry__header {
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.quick-review-entry__marker {
+  flex: 0 0 auto;
+  color: var(--accent-primary);
+  font-size: var(--text-lg);
+  line-height: 1.1;
+}
+
+.quick-review-entry__header h3 {
+  min-inline-size: 0;
   color: var(--text-primary);
   font-size: var(--text-base);
   font-weight: 700;
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.quick-review-entry__detail,
+.quick-review-entry__code {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 0.24fr) minmax(0, 1fr);
+  align-items: start;
+  min-inline-size: 0;
+  gap: var(--space-3);
+}
+
+.quick-review-entry__label {
+  padding-block-start: 2px;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: var(--leading-normal);
+  text-transform: uppercase;
+}
+
+.quick-review-entry__code-stack {
+  display: grid;
+  min-inline-size: 0;
+  gap: var(--space-2);
 }
 
 .quick-review-subsection__content {
@@ -4552,6 +4610,16 @@ button, .nav-item, .clickable {
     inline-size: 100%;
   }
 
+  .quick-review-entry__detail,
+  .quick-review-entry__code {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .quick-review-entry__label {
+    padding-block-start: 0;
+  }
+
   .lesson-notes {
     padding: var(--space-4);
   }
@@ -4748,6 +4816,10 @@ button, .nav-item, .clickable {
   .quick-review-card__header h2 {
     min-inline-size: 100%;
     font-size: var(--text-base);
+  }
+
+  .quick-review-card__meta {
+    justify-content: flex-start;
   }
 
   .code-header {
