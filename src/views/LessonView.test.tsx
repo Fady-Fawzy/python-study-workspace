@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Lesson } from '../types/content';
 import { StudyStateV1 } from '../types/state';
 import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
+import { getStudyActivitySummary, readStudyActivity } from '../lib/studyActivity';
 import { LessonView } from './LessonView';
 
 const lesson: Lesson = {
@@ -67,6 +68,26 @@ describe('LessonView', () => {
 
     const resultingStates = onUpdateState.mock.calls.map(([updater]) => updater(state));
     expect(resultingStates).toContainEqual(expect.objectContaining({ preferredMode: 'detailed' }));
+  });
+
+  it('records one study activity day when a lesson is opened', () => {
+    localStorage.clear();
+    window.scrollTo = vi.fn();
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{}}
+        syntaxSections={[]}
+        state={state}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    expect(readStudyActivity().studyDays).toHaveLength(1);
+    expect(getStudyActivitySummary().todayStudied).toBe(true);
   });
 
   it('places the mobile contents trigger before lesson content rather than after notes and pagination', () => {

@@ -9,11 +9,28 @@ interface SearchModalProps {
   onClose: () => void;
   index: IndexedItem[];
   onSelectResult: (url: string) => void;
+  commands?: SearchCommand[];
+}
+
+export interface SearchCommand {
+  id: string;
+  label: string;
+  description: string;
+  keywords?: string[];
+  shortcut?: string;
+  icon?: React.ReactNode;
+  onSelect: () => void;
 }
 
 const suggestions = ['020', '056', 'append', 'kwargs', 'lambda', 'filter', 'dict', 'while', 'open()'];
 
-export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, index, onSelectResult }) => {
+export const SearchModal: React.FC<SearchModalProps> = ({
+  isOpen,
+  onClose,
+  index,
+  onSelectResult,
+  commands = []
+}) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -23,6 +40,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, index
   const results: SearchResult[] = useMemo(() => (
     query.trim() ? searchIndexedItems(query, index) : []
   ), [query, index]);
+
+  const filteredCommands = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    if (!normalizedQuery) return commands;
+
+    return commands.filter(command => [
+      command.label,
+      command.description,
+      ...(command.keywords ?? [])
+    ].some(value => value.toLocaleLowerCase().includes(normalizedQuery)));
+  }, [commands, query]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -43,6 +71,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, index
 
   const selectResult = (result: SearchResult) => {
     onSelectResult(result.url);
+    onClose();
+  };
+
+  const selectCommand = (command: SearchCommand) => {
+    command.onSelect();
     onClose();
   };
 
@@ -128,7 +161,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, index
         </div>
 
         <div className="search-modal__body">
-          {!query.trim() && (
+          {!query.trim() && filteredCommands.length === 0 && (
             <div className="search-modal__empty">
               <p>Search by lesson number, method, or Python keyword.</p>
               <div className="search-modal__suggestions" aria-label="Suggested searches">
@@ -149,7 +182,36 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, index
             </div>
           )}
 
-          {query.trim() && results.length === 0 && (
+          {filteredCommands.length > 0 && (
+            <section className="search-modal__commands" aria-labelledby="search-quick-actions-title">
+              <h3 id="search-quick-actions-title">Quick actions</h3>
+              <div className="search-modal__command-list">
+                {filteredCommands.map(command => (
+                  <button
+                    key={command.id}
+                    type="button"
+                    className="search-modal__command"
+                    data-command-id={command.id}
+                    onClick={() => selectCommand(command)}
+                    aria-label={`Run command: ${command.label}`}
+                  >
+                    <span className="search-modal__command-icon" aria-hidden="true">
+                      {command.icon ?? <CornerDownLeft size={16} />}
+                    </span>
+                    <span className="search-modal__command-copy">
+                      <span className="search-modal__command-label">{command.label}</span>
+                      <span className="search-modal__command-description">{command.description}</span>
+                    </span>
+                    {command.shortcut && (
+                      <kbd className="search-modal__command-shortcut">{command.shortcut}</kbd>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {query.trim() && results.length === 0 && filteredCommands.length === 0 && (
             <p className="search-modal__no-results" role="status">
               No matches found for &ldquo;{query}&rdquo;
             </p>

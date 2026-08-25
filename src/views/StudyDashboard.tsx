@@ -5,11 +5,13 @@ import {
   BookOpen,
   Check,
   Clock,
+  Flame,
   FileText,
   ListChecks,
   Play
 } from 'lucide-react';
 import { LESSON_CATEGORIES } from '../lib/lessonMapping';
+import { getStudyActivitySummary, readStudyActivity, StudyActivity } from '../lib/studyActivity';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
 
@@ -18,6 +20,8 @@ interface StudyDashboardProps {
   syntaxSections: SyntaxSection[];
   state: StudyStateV1;
   onNavigate: (path: string) => void;
+  activity?: StudyActivity;
+  activityNow?: Date;
 }
 
 function lessonActionLabel(lesson: Lesson, isCompleted = false) {
@@ -31,7 +35,9 @@ function metricLabel(value: number, singular: string, plural = `${singular}s`) {
 export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   lessons,
   state,
-  onNavigate
+  onNavigate,
+  activity,
+  activityNow
 }) => {
   const lessonIds = new Set(lessons.map((lesson) => lesson.id));
   const completedIds = new Set(
@@ -45,6 +51,10 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
     : 0;
   const bookmarkCount = state.bookmarkedLessons.length + state.bookmarkedSyntax.length;
   const noteCount = Object.values(state.lessonNotes).filter((note) => note.trim()).length;
+  const activitySummary = getStudyActivitySummary(
+    activityNow ?? new Date(),
+    activity ?? readStudyActivity()
+  );
   const nextLesson = lessons.find((lesson) => !completedIds.has(lesson.id));
 
   const savedLesson = lessons.find((lesson) => lesson.id === state.lastOpenedLessonId);
@@ -108,6 +118,36 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
           value={completedCount}
           max={Math.max(totalLessons, 1)}
         />
+      </section>
+
+      <section className="dashboard-activity ui-card" aria-label="Study activity">
+        <div className="dashboard-activity__header">
+          <div className="dashboard-section-title">
+            <span className="dashboard-section-title__icon dashboard-section-title__icon--streak">
+              <Flame size={16} aria-hidden="true" />
+            </span>
+            <div>
+              <h2>Study activity</h2>
+              <p>Small, consistent sessions add up.</p>
+            </div>
+          </div>
+          <span className="dashboard-activity__total">{activitySummary.totalDays} total days</span>
+        </div>
+
+        <dl className="dashboard-activity__metrics">
+          <div className="dashboard-activity__metric dashboard-activity__metric--highlight">
+            <dt>Current streak</dt>
+            <dd>{activitySummary.currentStreak}-day streak</dd>
+          </div>
+          <div className="dashboard-activity__metric">
+            <dt>Last 7 days</dt>
+            <dd>{activitySummary.activeDaysLast7} active {activitySummary.activeDaysLast7 === 1 ? 'day' : 'days'}</dd>
+          </div>
+          <div className="dashboard-activity__metric dashboard-activity__metric--status">
+            <dt>Today</dt>
+            <dd>{activitySummary.todayStudied ? 'Studied today' : 'Not started today'}</dd>
+          </div>
+        </dl>
       </section>
 
       <section className="dashboard-overview ui-card" aria-label="Study Overview">

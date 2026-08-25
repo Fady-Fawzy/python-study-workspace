@@ -92,6 +92,37 @@ describe('Search Engine Ranking', () => {
     }));
   });
 
+  it('matches separate explanation words instead of requiring one exact phrase', () => {
+    const detailed021Raw = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/content/detailed/021.md'),
+      'utf-8'
+    );
+    const detailed021 = parseDetailedLesson(detailed021Raw, '021');
+    const enrichedIndex = buildSearchIndex(lessons, syntaxSections, { '021': detailed021 });
+
+    const results = searchIndexedItems('ordered mutable', enrichedIndex);
+    expect(results[0]).toEqual(expect.objectContaining({
+      type: 'lesson',
+      lessonNumber: 21
+    }));
+  });
+
+  it('indexes structured detailed blocks even when their text is not repeated in raw markdown', () => {
+    const structuredLesson = parseDetailedLesson('# 020 — Arithmetic Operators\n\nIntro.', '020');
+    structuredLesson.blocks.push({
+      id: 'structured-note',
+      type: 'mental-model',
+      content: 'A quotient bucket is the mental model for complete groups.'
+    });
+
+    const enrichedIndex = buildSearchIndex(lessons, [], { '020': structuredLesson });
+    const results = searchIndexedItems('quotient bucket', enrichedIndex);
+    expect(results[0]).toEqual(expect.objectContaining({
+      type: 'lesson',
+      lessonNumber: 20
+    }));
+  });
+
   it('sorts all search results in strictly descending score order', () => {
     const results = searchIndexedItems('function', index);
     for (let i = 0; i < results.length - 1; i++) {

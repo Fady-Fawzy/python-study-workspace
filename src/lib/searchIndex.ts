@@ -1,5 +1,18 @@
 import { DetailedLessonMap, Lesson, SyntaxSection, SearchResult } from '../types/content';
 
+function detailedSearchContent(detailedLesson: DetailedLessonMap[string]): string {
+  return [
+    detailedLesson.rawMarkdown,
+    detailedLesson.title,
+    ...detailedLesson.toc.map(item => item.text),
+    ...detailedLesson.blocks.flatMap(block => [
+      block.type,
+      block.label || '',
+      block.content
+    ])
+  ].join('\n').toLowerCase();
+}
+
 export interface IndexedItem {
   id: string;
   type: 'lesson' | 'syntax' | 'method';
@@ -43,7 +56,10 @@ export function buildSearchIndex(
         ...lesson.toc.map(t => t.text.toLowerCase()),
         ...(detailedLesson?.toc.map(t => t.text.toLowerCase()) || [])
       ],
-      content: [lesson.rawMarkdown, detailedLesson?.rawMarkdown || ''].join('\n').toLowerCase()
+      content: [
+        lesson.rawMarkdown,
+        detailedLesson ? detailedSearchContent(detailedLesson) : ''
+      ].join('\n').toLowerCase()
     });
 
     // Index Methods specifically attached to this lesson
@@ -110,6 +126,8 @@ export function searchIndexedItems(query: string, index: IndexedItem[]): SearchR
   const clean = query.trim().toLowerCase();
   if (!clean) return [];
 
+  const queryTerms = clean.split(/\s+/).filter(Boolean);
+
   const results: { item: IndexedItem; score: number; snippet: string }[] = [];
 
   const isNumericQuery = /^\d+$/.test(clean);
@@ -118,6 +136,17 @@ export function searchIndexedItems(query: string, index: IndexedItem[]): SearchR
   for (const item of index) {
     let score = 0;
     let snippet = '';
+    const searchableText = [
+      item.title,
+      item.subtitle,
+      ...item.keywords,
+      item.content
+    ].join(' ').toLowerCase();
+
+    // Documentation-style search is intentionally AND-based for multi-word
+    // queries: every term must be present somewhere in the item, even when
+    // punctuation or other words sit between them in the explanation.
+    if (!queryTerms.every(term => searchableText.includes(term))) continue;
 
     // 1. Exact Lesson Number match (Highest priority)
     if (queryNum !== null && item.type === 'lesson' && item.lessonNumber === queryNum) {
@@ -158,13 +187,20 @@ export function searchIndexedItems(query: string, index: IndexedItem[]): SearchR
       }
     }
 
+    if (queryTerms.length > 1) {
+      score += queryTerms.reduce((termScore, term) => (
+        termScore + (titleLower.includes(term) ? 25 : 0)
+      ), 0);
+    }
+
     // 7. Body content match
-    const bodyIdx = item.content.indexOf(clean);
+    const snippetTerm = queryTerms.find(term => item.content.includes(term)) || clean;
+    const bodyIdx = item.content.indexOf(snippetTerm);
     if (bodyIdx !== -1) {
       score += 20;
       // Extract a 100-char context window snippet
       const start = Math.max(0, bodyIdx - 30);
-      const end = Math.min(item.content.length, bodyIdx + clean.length + 50);
+      const end = Math.min(item.content.length, bodyIdx + snippetTerm.length + 50);
       snippet = '...' + item.content.substring(start, end).replace(/\n+/g, ' ') + '...';
     }
 

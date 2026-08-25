@@ -9,6 +9,7 @@ import { PRACTICE_LESSON_SOURCES } from './content/practice';
 import { buildSearchIndex } from './lib/searchIndex';
 import { loadStudyState, saveStudyState } from './lib/storage';
 import { parseRoute, normalizePath } from './lib/routing';
+import { applyThemePreference } from './lib/theme';
 import { StudyStateV1 } from './types/state';
 import { AppShell } from './components/layout/AppShell';
 import { StudyDashboard } from './views/StudyDashboard';
@@ -48,21 +49,18 @@ export function App() {
 
   // 3. Theme Management
   useEffect(() => {
-    const applyTheme = () => {
-      let activeTheme = state.theme;
-      if (activeTheme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        activeTheme = prefersDark ? 'dark' : 'light';
-      }
-      document.documentElement.setAttribute('data-theme', activeTheme);
-    };
+    const applyCurrentTheme = () => applyThemePreference(
+      state.theme,
+      document,
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    );
 
-    applyTheme();
+    applyCurrentTheme();
 
     // Listen to OS theme changes if on system
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = () => {
-      if (state.theme === 'system') applyTheme();
+      if (state.theme === 'system') applyCurrentTheme();
     };
     mediaQuery.addEventListener('change', listener);
     return () => mediaQuery.removeEventListener('change', listener);

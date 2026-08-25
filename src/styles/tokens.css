@@ -28,6 +28,8 @@
   /* Code surfaces remain deliberately dark in both application themes. */
   --code-text: #e2e8f0;
   --code-muted: #a7b3c5;
+  --selection-bg: rgba(88, 166, 255, 0.32);
+  --selection-text: #ffffff;
 
   /* Spacing Scale */
   --space-1: 0.25rem;   /* 4px */
@@ -162,6 +164,8 @@
   --text-secondary: #475569;
   --text-muted: #64748b;
   --text-inverse: #ffffff;
+  --selection-bg: rgba(37, 99, 235, 0.22);
+  --selection-text: #0f172a;
 
   --accent-primary: #2563eb;
   --accent-primary-hover: #1d4ed8;

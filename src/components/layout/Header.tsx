@@ -99,6 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenSearch}
           title="Global Search (Ctrl+K)"
           aria-label="Global search (Ctrl+K)"
+          aria-keyshortcuts="Control+K Meta+K"
         >
           <Search size={18} aria-hidden="true" />
           <span className="header-search-button__label">Search</span>

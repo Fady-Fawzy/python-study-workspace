@@ -67,6 +67,21 @@ function renderDashboard(overrides: Partial<StudyStateV1> = {}) {
   return onNavigate;
 }
 
+function renderActivityDashboard() {
+  const onNavigate = vi.fn();
+  render(
+    <StudyDashboard
+      lessons={lessons}
+      syntaxSections={[]}
+      state={baseState}
+      onNavigate={onNavigate}
+      activity={{ studyDays: ['2026-08-23', '2026-08-24', '2026-08-25'] }}
+      activityNow={new Date(2026, 7, 25)}
+    />
+  );
+  return onNavigate;
+}
+
 afterEach(cleanup);
 
 describe('study dashboard', () => {
@@ -162,5 +177,15 @@ describe('study dashboard', () => {
     expect(longTitleRow).toHaveClass('dashboard-topic-lesson');
     await user.click(longTitleRow);
     expect(onNavigate).toHaveBeenLastCalledWith('/lesson/020');
+  });
+
+  it('shows a compact activity streak without replacing course progress', () => {
+    renderActivityDashboard();
+
+    const activity = screen.getByRole('region', { name: /study activity/i });
+    expect(within(activity).getByText('3-day streak')).toBeInTheDocument();
+    expect(within(activity).getByText('3 active days')).toBeInTheDocument();
+    expect(within(activity).getByText(/studied today/i)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /course progress/i })).toBeInTheDocument();
   });
 });

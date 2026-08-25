@@ -177,6 +177,40 @@ describe('application shell navigation', () => {
     expect(screen.getByRole('heading', { name: /backup & restore study data/i })).toBeInTheDocument();
   });
 
+  it('offers navigation and data actions from the command palette', async () => {
+    const user = userEvent.setup();
+    const { onNavigate } = renderShell();
+
+    await user.click(screen.getByRole('button', { name: /global search/i }));
+    const dialog = screen.getByRole('dialog', { name: /search python study workspace/i });
+    expect(within(dialog).getByRole('heading', { name: /quick actions/i })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: /run command: syntax reference/i }));
+
+    expect(onNavigate).toHaveBeenLastCalledWith('/reference');
+    expect(screen.queryByRole('dialog', { name: /search python study workspace/i })).not.toBeInTheDocument();
+  });
+
+  it('provides a skip link and moves focus to the main landmark after navigation', async () => {
+    const user = userEvent.setup();
+    const { rerenderPath } = renderShell('/lesson/020');
+    const skipLink = screen.getByRole('link', { name: /skip to content/i });
+    const main = screen.getByRole('main');
+
+    expect(main).toHaveAttribute('id', 'main-content');
+    expect(main).toHaveAttribute('tabindex', '-1');
+    await user.click(skipLink);
+    expect(main).toHaveFocus();
+
+    rerenderPath('/reference');
+    await waitFor(() => expect(screen.getByRole('main')).toHaveFocus());
+  });
+
+  it('exposes the global search keyboard shortcut to assistive technology', () => {
+    renderShell();
+    expect(screen.getByRole('button', { name: /global search/i }))
+      .toHaveAttribute('aria-keyshortcuts', 'Control+K Meta+K');
+  });
+
   it.each([
     { chord: '{Control>}k{/Control}', label: 'Ctrl+K' },
     { chord: '{Meta>}k{/Meta}', label: 'Cmd+K' }

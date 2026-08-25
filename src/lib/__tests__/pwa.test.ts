@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { registerServiceWorker } from '../pwa';
 
@@ -31,5 +33,13 @@ describe('PWA service worker registration', () => {
 
     expect(addEventListener).not.toHaveBeenCalled();
     expect(register).not.toHaveBeenCalled();
+  });
+
+  it('ships a versioned worker that can activate an updated cache', () => {
+    const worker = readFileSync(resolve(process.cwd(), 'public/sw.js'), 'utf8');
+
+    expect(worker).toContain("CACHE_NAME = `${CACHE_PREFIX}-v2`");
+    expect(worker).toContain("event.data?.type === 'SKIP_WAITING'");
+    expect(worker).toContain('self.skipWaiting()');
   });
 });

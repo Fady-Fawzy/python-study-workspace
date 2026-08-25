@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'python-study-workspace';
-const CACHE_NAME = `${CACHE_PREFIX}-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}-v2`;
 const APP_SCOPE = self.registration.scope;
 const APP_SHELL = new URL('./', APP_SCOPE).href;
 const PRECACHE_URLS = [
@@ -26,6 +26,12 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting());
+  }
 });
 
 function cacheResponse(request, response) {

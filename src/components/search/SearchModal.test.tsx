@@ -44,7 +44,19 @@ const index: IndexedItem[] = [
   }
 ];
 
-function SearchHarness({ onSelectResult = vi.fn() }: { onSelectResult?: (url: string) => void }) {
+function SearchHarness({
+  onSelectResult = vi.fn(),
+  commands = []
+}: {
+  onSelectResult?: (url: string) => void;
+  commands?: Array<{
+    id: string;
+    label: string;
+    description: string;
+    keywords?: string[];
+    onSelect: () => void;
+  }>;
+}) {
   const [open, setOpen] = React.useState(false);
   return (
     <>
@@ -54,6 +66,7 @@ function SearchHarness({ onSelectResult = vi.fn() }: { onSelectResult?: (url: st
         onClose={() => setOpen(false)}
         index={index}
         onSelectResult={onSelectResult}
+        commands={commands}
       />
     </>
   );
@@ -155,5 +168,48 @@ describe('SearchModal', () => {
     await user.keyboard('{ArrowDown}');
 
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' }));
+  });
+
+  it('shows quick actions in the empty palette and runs a command', async () => {
+    const onSelect = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <SearchHarness
+        commands={[{
+          id: 'syntax',
+          label: 'Syntax Reference',
+          description: 'Browse Python syntax by topic.',
+          keywords: ['reference', 'docs'],
+          onSelect
+        }]}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /open search/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: /quick actions/i })).toBeInTheDocument();
+    const command = within(dialog).getByRole('button', { name: /run command: syntax reference/i });
+    expect(command).toHaveAttribute('data-command-id', 'syntax');
+
+    await user.click(command);
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('filters commands alongside search when a command keyword is typed', async () => {
+    const user = userEvent.setup();
+    render(
+      <SearchHarness
+        commands={[
+          { id: 'notes', label: 'Notes', description: 'Open saved notes.', keywords: ['writing'], onSelect: vi.fn() },
+          { id: 'backup', label: 'Backup & Restore', description: 'Export or restore progress.', keywords: ['data'], onSelect: vi.fn() }
+        ]}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /open search/i }));
+    await user.type(screen.getByRole('searchbox'), 'backup');
+    expect(screen.getByRole('button', { name: /run command: backup & restore/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /run command: notes/i })).not.toBeInTheDocument();
   });
 });

@@ -13,6 +13,7 @@ import { LessonNotes } from '../components/lesson/LessonNotes';
 import { LessonPagination } from '../components/lesson/LessonPagination';
 import { selectDetailedLesson } from '../lib/detailedContent';
 import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
+import { recordStudyActivity } from '../lib/studyActivity';
 
 interface LessonViewProps {
   lessonId: string;
@@ -58,6 +59,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
   // Track recent lessons and last opened lesson
   useEffect(() => {
     if (!lesson) return;
+
+    recordStudyActivity();
 
     onUpdateState(prev => {
       const recents = [lesson.id, ...prev.recentLessonIds.filter((id: string) => id !== lesson.id)].slice(0, 10);
