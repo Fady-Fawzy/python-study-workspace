@@ -374,6 +374,7 @@ p {
 
 .lesson-mode-panel {
   scroll-margin-top: calc(var(--header-height) + var(--space-3));
+  overflow-x: clip;
 }
 
 .lesson-mode-panel:focus-visible {
@@ -756,6 +757,7 @@ p {
 }
 
 .detailed-rich-text table {
+  inline-size: max-content;
   width: 100%;
   min-width: 360px;
   border-collapse: collapse;
@@ -1924,6 +1926,51 @@ p {
 .app-shell--full-view .lesson-main-column {
   max-inline-size: var(--content-wide-max-width);
   margin-inline: auto;
+}
+
+/* Small, mobile-first reading controls. They stay out of the document flow so
+   they never push code or output blocks wider, and safe-area padding keeps
+   them above browser gesture bars on phones. */
+.lesson-reading-controls {
+  position: fixed;
+  inset-block-end: max(var(--space-3), var(--safe-area-bottom));
+  inset-inline-end: max(var(--page-gutter-compact), var(--safe-area-right));
+  z-index: var(--z-navigation);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.lesson-reading-controls__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--touch-target);
+  min-inline-size: var(--touch-target);
+  block-size: var(--touch-target);
+  min-block-size: var(--touch-target);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.lesson-reading-controls__button:hover {
+  border-color: var(--border-active);
+  background-color: var(--bg-surface-hover);
+  color: var(--accent-primary);
+}
+
+@media (min-width: 1025px) {
+  .lesson-reading-controls {
+    display: none;
+  }
 }
 
 /* Touch targets */
@@ -4887,5 +4934,10 @@ button, .nav-item, .clickable {
 @media (max-width: 360px) {
   .lesson-header__actions {
     gap: var(--space-2);
+  }
+
+  .lesson-reading-controls {
+    inset-inline-end: max(8px, var(--safe-area-right));
+    inset-block-end: max(var(--space-2), var(--safe-area-bottom));
   }
 }

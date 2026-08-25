@@ -8,9 +8,11 @@ import { DetailedLessonContent } from '../components/lesson/DetailedLessonConten
 import { QuickReviewContent } from '../components/lesson/QuickReviewContent';
 import { PracticeContent } from '../components/lesson/PracticeContent';
 import { TableOfContents } from '../components/lesson/TableOfContents';
+import { LessonReadingControls } from '../components/lesson/LessonReadingControls';
 import { LessonNotes } from '../components/lesson/LessonNotes';
 import { LessonPagination } from '../components/lesson/LessonPagination';
 import { selectDetailedLesson } from '../lib/detailedContent';
+import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
 
 interface LessonViewProps {
   lessonId: string;
@@ -66,8 +68,63 @@ export const LessonView: React.FC<LessonViewProps> = ({
       };
     });
 
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: readReadingPosition(lesson.id), behavior: 'auto' });
   }, [lesson, onUpdateState]);
+
+  // Keep a lightweight, lesson-scoped reading checkpoint without coupling it
+  // to the main study state. The requestAnimationFrame guard prevents a long
+  // reading session from writing localStorage for every scroll event.
+  useEffect(() => {
+    if (!lesson) return;
+
+    let frame: number | null = null;
+    let frameType: 'animation' | 'timeout' | null = null;
+    let lastPosition = Math.max(0, window.scrollY || 0);
+
+    const persist = () => {
+      frame = null;
+      frameType = null;
+      lastPosition = Math.max(0, window.scrollY || 0);
+      writeReadingPosition(lesson.id, lastPosition);
+    };
+
+    const schedulePersist = () => {
+      // Capture the position synchronously so route changes cannot replace it
+      // with the next page's temporary scroll-to-top position during cleanup.
+      lastPosition = Math.max(0, window.scrollY || 0);
+      if (frame !== null) return;
+
+      if (typeof window.requestAnimationFrame === 'function') {
+        frameType = 'animation';
+        frame = window.requestAnimationFrame(persist);
+      } else {
+        frameType = 'timeout';
+        frame = window.setTimeout(persist, 0);
+      }
+    };
+
+    const flushPersist = () => {
+      if (frame !== null) {
+        if (frameType === 'animation' && typeof window.cancelAnimationFrame === 'function') {
+          window.cancelAnimationFrame(frame);
+        } else if (frameType === 'timeout') {
+          window.clearTimeout(frame);
+        }
+        frame = null;
+        frameType = null;
+      }
+      writeReadingPosition(lesson.id, lastPosition);
+    };
+
+    window.addEventListener('scroll', schedulePersist, { passive: true });
+    window.addEventListener('pagehide', flushPersist);
+
+    return () => {
+      window.removeEventListener('scroll', schedulePersist);
+      window.removeEventListener('pagehide', flushPersist);
+      flushPersist();
+    };
+  }, [lesson]);
 
   if (!lesson) {
     return <div>Lesson not found</div>;
@@ -201,6 +258,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
       {activeMode === 'detailed' && detailedToc.length > 1 && (
         <TableOfContents items={detailedToc} variant="desktop" />
       )}
+
+      <LessonReadingControls />
     </div>
   );
 };

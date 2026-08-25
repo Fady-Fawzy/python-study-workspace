@@ -165,6 +165,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             aria-label={`Open lesson contents, ${items.length} sections`}
             aria-haspopup="dialog"
             aria-expanded={isMobileOpen}
+            data-open={isMobileOpen ? 'true' : 'false'}
             aria-controls="mobile-lesson-contents"
             onClick={() => setIsMobileOpen(true)}
           >

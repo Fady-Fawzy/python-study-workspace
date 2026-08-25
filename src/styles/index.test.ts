@@ -44,4 +44,37 @@ describe('markdown styling contracts', () => {
       /@media \(max-width: 600px\)[\s\S]*?\.quick-review-entry__detail,[\s\S]*?\.quick-review-entry__code\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
     );
   });
+
+  it('keeps reading navigation touch-friendly and inside the mobile safe area', () => {
+    expect(stylesheet).toMatch(
+      /\.lesson-reading-controls\s*\{[^}]*position:\s*fixed;[^}]*inset-block-end:\s*max\([^}]*var\(--safe-area-bottom\)/s
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-reading-controls__button\s*\{[^}]*min-inline-size:\s*var\(--touch-target\);[^}]*min-block-size:\s*var\(--touch-target\);/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(min-width: 1025px\)[\s\S]*?\.lesson-reading-controls\s*\{[^}]*display:\s*none;/s
+    );
+  });
+
+  it('keeps detailed code, output, and tables in their own horizontal reading surfaces', () => {
+    expect(stylesheet).toMatch(
+      /\.code-pre\s*\{[^}]*overflow-x:\s*auto;[^}]*overscroll-behavior-inline:\s*contain;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.detailed-result-block pre\s*\{[^}]*overflow-x:\s*auto;[^}]*overscroll-behavior-inline:\s*contain;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.detailed-rich-text\s*\{[^}]*overflow-x:\s*auto;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.detailed-rich-text table\s*\{[^}]*min-width:\s*360px;/s
+    );
+  });
+
+  it('keeps the narrowest phone layout explicit instead of relying on desktop spacing', () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 360px\)[\s\S]*?\.lesson-reading-controls\s*\{[^}]*inset-inline-end:\s*max\(/s
+    );
+  });
 });

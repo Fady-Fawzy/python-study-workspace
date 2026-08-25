@@ -36,8 +36,10 @@ describe('TableOfContents', () => {
     render(<TableOfContents items={items} variant="mobile" />);
 
     const trigger = screen.getByRole('button', { name: /open lesson contents/i });
+    expect(trigger).toHaveAttribute('data-open', 'false');
     trigger.focus();
     await user.click(trigger);
+    expect(trigger).toHaveAttribute('data-open', 'true');
 
     const dialog = screen.getByRole('dialog', { name: /lesson contents/i });
     const close = within(dialog).getByRole('button', { name: /close lesson contents/i });
@@ -54,6 +56,7 @@ describe('TableOfContents', () => {
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute('data-open', 'false');
     expect(document.body.style.overflow).toBe('');
     expect(trigger).toHaveFocus();
   });

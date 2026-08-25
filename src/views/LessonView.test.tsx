@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Lesson } from '../types/content';
 import { StudyStateV1 } from '../types/state';
+import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
 import { LessonView } from './LessonView';
 
 const lesson: Lesson = {
@@ -123,6 +124,89 @@ describe('LessonView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Full View' }));
     expect(onFullViewChange).toHaveBeenCalledWith(true);
+  });
+
+  it('renders jump controls outside the lesson reading content', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 320, writable: true });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800, writable: true });
+    Object.defineProperty(document.documentElement, 'scrollHeight', {
+      configurable: true,
+      value: 2000,
+      writable: true
+    });
+    window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{}}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    const controls = screen.getByRole('navigation', { name: 'Reading navigation' });
+    expect(controls).toContainElement(screen.getByRole('button', { name: 'Jump to top' }));
+    expect(controls).toContainElement(screen.getByRole('button', { name: 'Jump to end' }));
+  });
+
+  it('restores a saved reading position when opening a lesson', () => {
+    localStorage.clear();
+    window.scrollTo = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0, writable: true });
+    window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+    writeReadingPosition('020', 480);
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{}}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 480, behavior: 'auto' });
+  });
+
+  it('persists the current lesson position after scrolling', () => {
+    localStorage.clear();
+    window.scrollTo = vi.fn();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 540, writable: true });
+    window.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      callback(0);
+      return 1;
+    });
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{}}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+
+    expect(readReadingPosition('020')).toBe(540);
   });
 
   it('renders Practice for a mapped lesson and persists the selected answer', async () => {
