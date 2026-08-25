@@ -5,6 +5,8 @@ import {
   BookOpen,
   Check,
   Clock,
+  FileText,
+  ListChecks,
   Play
 } from 'lucide-react';
 import { LESSON_CATEGORIES } from '../lib/lessonMapping';
@@ -22,6 +24,10 @@ function lessonActionLabel(lesson: Lesson, isCompleted = false) {
   return `Lesson ${lesson.id}: ${lesson.title}${isCompleted ? ', completed' : ''}`;
 }
 
+function metricLabel(value: number, singular: string, plural = `${singular}s`) {
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
 export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   lessons,
   state,
@@ -33,9 +39,13 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   );
   const completedCount = completedIds.size;
   const totalLessons = lessons.length;
+  const remainingCount = Math.max(totalLessons - completedCount, 0);
   const progressPercent = totalLessons > 0
     ? Math.round((completedCount / totalLessons) * 100)
     : 0;
+  const bookmarkCount = state.bookmarkedLessons.length + state.bookmarkedSyntax.length;
+  const noteCount = Object.values(state.lessonNotes).filter((note) => note.trim()).length;
+  const nextLesson = lessons.find((lesson) => !completedIds.has(lesson.id));
 
   const savedLesson = lessons.find((lesson) => lesson.id === state.lastOpenedLessonId);
   const lastLesson = savedLesson ?? lessons[0];
@@ -98,6 +108,63 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
           value={completedCount}
           max={Math.max(totalLessons, 1)}
         />
+      </section>
+
+      <section className="dashboard-overview ui-card" aria-label="Study Overview">
+        <div className="dashboard-overview__header">
+          <div className="dashboard-section-title">
+            <ListChecks size={17} aria-hidden="true" />
+            <h2>Study Overview</h2>
+          </div>
+          <span className="dashboard-overview__percent">{progressPercent}% complete</span>
+        </div>
+
+        <div className="dashboard-overview__metrics">
+          <div className="dashboard-overview__metric">
+            <span className="dashboard-overview__metric-icon dashboard-overview__metric-icon--success" aria-hidden="true">
+              <Check size={15} />
+            </span>
+            <span className="dashboard-overview__metric-value">{metricLabel(completedCount, 'completed', 'completed')}</span>
+          </div>
+          <div className="dashboard-overview__metric">
+            <span className="dashboard-overview__metric-icon dashboard-overview__metric-icon--primary" aria-hidden="true">
+              <BookOpen size={15} />
+            </span>
+            <span className="dashboard-overview__metric-value">{metricLabel(remainingCount, 'remaining', 'remaining')}</span>
+          </div>
+          <div className="dashboard-overview__metric">
+            <span className="dashboard-overview__metric-icon dashboard-overview__metric-icon--bookmark" aria-hidden="true">
+              <Bookmark size={15} fill="currentColor" />
+            </span>
+            <span className="dashboard-overview__metric-value">{metricLabel(bookmarkCount, 'bookmark')}</span>
+          </div>
+          <div className="dashboard-overview__metric">
+            <span className="dashboard-overview__metric-icon dashboard-overview__metric-icon--note" aria-hidden="true">
+              <FileText size={15} />
+            </span>
+            <span className="dashboard-overview__metric-value">{metricLabel(noteCount, 'note')}</span>
+          </div>
+        </div>
+
+        {nextLesson ? (
+          <div className="dashboard-overview__next">
+            <div className="dashboard-overview__next-copy">
+              <span className="dashboard-overview__next-label">Next up</span>
+              <strong>Lesson {nextLesson.id}: {nextLesson.title}</strong>
+            </div>
+            <button
+              type="button"
+              className="dashboard-overview__next-action"
+              aria-label={`Open next lesson ${nextLesson.id}: ${nextLesson.title}`}
+              onClick={() => onNavigate(`/lesson/${nextLesson.id}`)}
+            >
+              Open Next
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
+          <p className="dashboard-overview__complete-message">All lessons are complete. Nice work.</p>
+        )}
       </section>
 
       <div className="dashboard-resume-grid">

@@ -15,6 +15,8 @@ A fast, responsive, personal Python study workspace and syntax reference built d
 - **Syntax Reference Browser (`/#/reference`)**: Complete explorer covering all 67 sections categorized across 10 structured domains with real-time keyword search.
 - **Global Search (`Ctrl+K`)**: Ranked search prioritizing exact lesson numbers, method signatures (`append()`, `kwargs`, `filter()`, `lambda`), and syntax topics.
 - **Personal Notes & Data Protection**: Debounced autosaving study notes per lesson with 1-click JSON Backup & Restore for data loss prevention.
+- **Study Overview**: Course-relative completed, remaining, bookmark, and note counts plus a one-tap link to the next incomplete lesson.
+- **Offline-Ready PWA**: Installable GitHub Pages app with a static manifest and service worker that caches the app shell and previously visited assets for offline revisits.
 - **Mobile-First**: Zero horizontal overflow, touch-optimized navigation drawer, and safe-area insets across screen widths from 320px to 1440px+.
 
 ---

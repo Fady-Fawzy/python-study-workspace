@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title">
+  <title>Python Study Workspace</title>
+  <rect width="192" height="192" rx="42" fill="#0b111a"/>
+  <rect x="30" y="30" width="132" height="132" rx="30" fill="#388bfd"/>
+  <path d="M96 48c-24 0-34 10-34 29v12h34v10H52c-19 0-29 10-29 34s10 29 29 29h17v-13H52c-8 0-13-5-13-16s5-17 13-17h44c15 0 25-10 25-27V77c0-19-10-29-25-29Zm-7 18h14v14H89V66Z" fill="#fff"/>
+  <path d="M96 144c24 0 34-10 34-29v-12H96V93h44c19 0 29-10 29-34s-10-29-29-29h-17v13h17c8 0 13 5 13 16s-5 17-13 17H96c-15 0-25 10-25 27v13c0 19 10 29 25 29Zm7-18H89v-14h14v14Z" fill="#dbeafe"/>
+</svg>

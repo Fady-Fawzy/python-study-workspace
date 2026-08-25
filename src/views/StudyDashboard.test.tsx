@@ -96,6 +96,25 @@ describe('study dashboard', () => {
     expect(screen.getByText('67%')).toBeInTheDocument();
   });
 
+  it('shows a study overview and points to the next incomplete lesson', async () => {
+    const user = userEvent.setup();
+    const onNavigate = renderDashboard({
+      completedLessons: ['020'],
+      bookmarkedLessons: ['074'],
+      lessonNotes: { '020': 'Review precedence' },
+      lastOpenedLessonId: '020'
+    });
+
+    const overview = screen.getByRole('region', { name: /study overview/i });
+    expect(within(overview).getByText('1 completed')).toBeInTheDocument();
+    expect(within(overview).getByText('2 remaining')).toBeInTheDocument();
+    expect(within(overview).getByText('1 bookmark')).toBeInTheDocument();
+    expect(within(overview).getByText('1 note')).toBeInTheDocument();
+
+    await user.click(within(overview).getByRole('button', { name: /open next lesson 021/i }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/lesson/021');
+  });
+
   it('shows a useful recent-lessons empty state', () => {
     renderDashboard();
 
