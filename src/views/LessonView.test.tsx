@@ -30,6 +30,20 @@ const state: StudyStateV1 = {
   updatedAt: '2026-08-25T00:00:00.000Z'
 };
 
+const practiceLesson = {
+  id: '020',
+  number: 20,
+  title: 'Arithmetic Operators',
+  questions: [{
+    id: 'first',
+    type: 'predict-output' as const,
+    prompt: 'What does this print?',
+    choices: ['2', '3'],
+    correctAnswer: 0,
+    explanation: 'Addition produces 2.'
+  }]
+};
+
 describe('LessonView', () => {
   it('starts in the persisted mode and persists a new mode selection', async () => {
     window.scrollTo = vi.fn();
@@ -109,5 +123,66 @@ describe('LessonView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Full View' }));
     expect(onFullViewChange).toHaveBeenCalledWith(true);
+  });
+
+  it('renders Practice for a mapped lesson and persists the selected answer', async () => {
+    window.scrollTo = vi.fn();
+    const user = userEvent.setup();
+    const onUpdateState = vi.fn();
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{}}
+        practiceLessons={{ '020': practiceLesson }}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={onUpdateState}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('tab', { name: 'Practice' }));
+    expect(screen.getByRole('region', { name: /arithmetic operators practice/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '2' }));
+    const persistedStates = onUpdateState.mock.calls.map(([updater]) => updater(state));
+    expect(persistedStates).toContainEqual(expect.objectContaining({
+      practiceProgress: {
+        '020': {
+          questionIndex: 0,
+          answers: { first: 0 },
+          score: 1,
+          completed: false
+        }
+      }
+    }));
+  });
+
+  it('does not expose Practice for a lesson without a mapped bank', () => {
+    window.scrollTo = vi.fn();
+    const lesson026: Lesson = {
+      ...lesson,
+      id: '026',
+      number: 26,
+      title: 'Strings'
+    };
+
+    render(
+      <LessonView
+        lessonId="026"
+        lessons={[lesson026]}
+        detailedLessons={{}}
+        practiceLessons={{ '020': practiceLesson }}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'quickReview' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole('tab', { name: 'Practice' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /quick review/i })).toBeInTheDocument();
   });
 });

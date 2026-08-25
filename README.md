@@ -12,6 +12,7 @@ A fast, responsive, personal Python study workspace and syntax reference built d
 - **Dual Study Modes**:
   - `Detailed Study`: Enriched teaching content for all Lessons 020–074 with explanations, semantic result/error blocks, comparisons, mental models, and repository-owned examples.
   - `Quick Review`: Deterministic mapping displaying concise syntax rules, parameter breakdowns, and cheat sheet patterns directly within the active lesson.
+- **Practice Mode**: A third, mobile-friendly mode for Lessons 020–025 with predict-the-output, concept-check, instant explanations, score tracking, and local progress persistence. It uses stored verified outputs and never executes Python in the browser.
 - **Syntax Reference Browser (`/#/reference`)**: Complete explorer covering all 67 sections categorized across 10 structured domains with real-time keyword search.
 - **Global Search (`Ctrl+K`)**: Ranked search prioritizing exact lesson numbers, method signatures (`append()`, `kwargs`, `filter()`, `lambda`), and syntax topics.
 - **Personal Notes & Data Protection**: Debounced autosaving study notes per lesson with 1-click JSON Backup & Restore for data loss prevention.
@@ -81,7 +82,15 @@ npm run build
 
 # Preview production build locally
 npm run preview
+
+# Optional local Gemini authoring aid (never required by the site)
+GEMINI_API_KEY="your-local-key" npm run practice:draft -- 020
+
+# Validate the local draft authoring helper
+npm run practice:test
 ```
+
+The optional Gemini command is for local question-draft authoring only. Keep `GEMINI_API_KEY` in the process environment, never in source code or client-side Vite variables. Review drafts in `tmp/practice-drafts/` before manually transferring approved questions into `src/content/practice/`.
 
 ---
 

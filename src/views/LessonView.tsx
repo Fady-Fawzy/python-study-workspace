@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { DetailedLessonMap, Lesson, SyntaxSection } from '../types/content';
-import { StudyStateV1 } from '../types/state';
+import { PracticeLessonMap } from '../types/practice';
+import { PracticeProgress, StudyStateV1 } from '../types/state';
 import { LessonHeader } from '../components/lesson/LessonHeader';
 import { LessonContent } from '../components/lesson/LessonContent';
 import { DetailedLessonContent } from '../components/lesson/DetailedLessonContent';
 import { QuickReviewContent } from '../components/lesson/QuickReviewContent';
+import { PracticeContent } from '../components/lesson/PracticeContent';
 import { TableOfContents } from '../components/lesson/TableOfContents';
 import { LessonNotes } from '../components/lesson/LessonNotes';
 import { LessonPagination } from '../components/lesson/LessonPagination';
@@ -14,6 +16,7 @@ interface LessonViewProps {
   lessonId: string;
   lessons: Lesson[];
   detailedLessons: DetailedLessonMap;
+  practiceLessons?: PracticeLessonMap;
   syntaxSections: SyntaxSection[];
   state: StudyStateV1;
   onUpdateState: (updater: (prev: StudyStateV1) => StudyStateV1) => void;
@@ -26,6 +29,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   lessonId,
   lessons,
   detailedLessons,
+  practiceLessons = {},
   syntaxSections,
   state,
   onUpdateState,
@@ -33,7 +37,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
   isFullView = false,
   onFullViewChange = () => undefined
 }) => {
-  const [activeMode, setActiveMode] = useState<'detailed' | 'quickReview'>(state.preferredMode || 'detailed');
+  const [activeMode, setActiveMode] = useState<'detailed' | 'quickReview' | 'practice'>(state.preferredMode || 'detailed');
 
   const currentIndex = lessons.findIndex(l => l.id === lessonId);
   const lesson = currentIndex !== -1 ? lessons[currentIndex] : lessons[0];
@@ -41,6 +45,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const nextLesson = currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
   const detailedLesson = selectDetailedLesson(lesson, detailedLessons);
   const detailedToc = detailedLesson?.toc || lesson.toc;
+  const practiceLesson = practiceLessons[lesson.id];
+
+  useEffect(() => {
+    if (activeMode === 'practice' && !practiceLesson) {
+      setActiveMode('detailed');
+    }
+  }, [activeMode, practiceLesson]);
 
   // Track recent lessons and last opened lesson
   useEffect(() => {
@@ -101,9 +112,21 @@ export const LessonView: React.FC<LessonViewProps> = ({
     }));
   };
 
-  const handleModeChange = (mode: 'detailed' | 'quickReview') => {
+  const handlePracticeModeChange = (mode: 'detailed' | 'quickReview' | 'practice') => {
     setActiveMode(mode);
-    onUpdateState(prev => ({ ...prev, preferredMode: mode }));
+    if (mode !== 'practice') {
+      onUpdateState(prev => ({ ...prev, preferredMode: mode }));
+    }
+  };
+
+  const handlePracticeProgressChange = (progress: PracticeProgress) => {
+    onUpdateState(prev => ({
+      ...prev,
+      practiceProgress: {
+        ...(prev.practiceProgress || {}),
+        [lesson.id]: progress
+      }
+    }));
   };
 
   return (
@@ -117,9 +140,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
           isCompleted={isCompleted}
           isBookmarked={isBookmarked}
           activeMode={activeMode}
+          hasPractice={Boolean(practiceLesson)}
           onToggleComplete={handleToggleComplete}
           onToggleBookmark={handleToggleBookmark}
-          onModeChange={handleModeChange}
+          onModeChange={handlePracticeModeChange}
           isFullView={isFullView}
           onToggleFullView={onFullViewChange}
         />
@@ -142,12 +166,18 @@ export const LessonView: React.FC<LessonViewProps> = ({
             ) : (
               <LessonContent sections={lesson.parsedSections} />
             )
-          ) : (
+          ) : activeMode === 'quickReview' ? (
             <QuickReviewContent
               syntaxSections={matchedSyntaxSections}
               onOpenFullReference={(secId: number) => onNavigate(`/reference?section=${secId}`)}
             />
-          )}
+          ) : practiceLesson ? (
+            <PracticeContent
+              lesson={practiceLesson}
+              progress={state.practiceProgress?.[lesson.id]}
+              onProgressChange={handlePracticeProgressChange}
+            />
+          ) : null}
         </div>
 
         {/* Personal Study Notes */}

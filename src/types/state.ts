@@ -8,7 +8,15 @@ export interface StudyStateV1 {
   recentLessonIds: string[];         // Max 10 recent lesson IDs
   theme: 'dark' | 'light' | 'system';
   preferredMode: 'detailed' | 'quickReview';
+  practiceProgress?: Record<string, PracticeProgress>;
   updatedAt: string;
+}
+
+export interface PracticeProgress {
+  questionIndex: number;
+  answers: Record<string, number>;
+  score: number;
+  completed: boolean;
 }
 
 export type StorageState = StudyStateV1;

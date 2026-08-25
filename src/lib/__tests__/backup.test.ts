@@ -23,6 +23,14 @@ describe('Backup & Restore System', () => {
         recentLessonIds: ['074'],
         theme: 'dark',
         preferredMode: 'quickReview',
+        practiceProgress: {
+          '020': {
+            questionIndex: 3,
+            answers: { '020-precedence': 0, '020-modulus': 0 },
+            score: 2,
+            completed: false
+          }
+        },
         updatedAt: '2026-08-22T00:00:00.000Z'
       }
     };
@@ -35,6 +43,12 @@ describe('Backup & Restore System', () => {
     const persisted = loadStudyState();
     expect(persisted.completedLessons).toEqual(['020', '030', '074']);
     expect(persisted.bookmarkedSyntax).toEqual([59]);
+    expect(persisted.practiceProgress?.['020']).toEqual({
+      questionIndex: 3,
+      answers: { '020-precedence': 0, '020-modulus': 0 },
+      score: 2,
+      completed: false
+    });
   });
 
   it('imports direct StudyStateV1 object without wrapper', () => {

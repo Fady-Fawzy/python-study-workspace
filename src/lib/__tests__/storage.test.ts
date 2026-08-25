@@ -17,6 +17,7 @@ describe('Storage Layer & Persistence', () => {
     expect(state.bookmarkedLessons).toEqual([]);
     expect(state.bookmarkedSyntax).toEqual([]);
     expect(state.lessonNotes).toEqual({});
+    expect(state.practiceProgress).toEqual({});
     expect(state.lastOpenedLessonId).toBe('020');
     expect(state.theme).toBe('system');
     expect(state.preferredMode).toBe('detailed');
@@ -35,6 +36,14 @@ describe('Storage Layer & Persistence', () => {
       recentLessonIds: ['056', '021', '020'],
       theme: 'dark',
       preferredMode: 'quickReview',
+      practiceProgress: {
+        '020': {
+          questionIndex: 2,
+          answers: { '020-precedence': 0, '020-true-division': 1 },
+          score: 1,
+          completed: false
+        }
+      },
       updatedAt: new Date().toISOString()
     };
 
@@ -49,6 +58,14 @@ describe('Storage Layer & Persistence', () => {
     expect(loaded.lastOpenedLessonId).toBe('056');
     expect(loaded.theme).toBe('dark');
     expect(loaded.preferredMode).toBe('quickReview');
+    expect(loaded.practiceProgress).toEqual({
+      '020': {
+        questionIndex: 2,
+        answers: { '020-precedence': 0, '020-true-division': 1 },
+        score: 1,
+        completed: false
+      }
+    });
   });
 
   it('safely recovers from malformed/corrupt JSON without throwing', () => {
@@ -81,6 +98,7 @@ describe('Storage Layer & Persistence', () => {
     expect(state.bookmarkedSyntax).toEqual([]);
     expect(state.lessonNotes).toEqual({});
     expect(state.preferredMode).toBe('detailed');
+    expect(state.practiceProgress).toEqual({});
   });
 
   it('validates theme and preferredMode values, falling back to safe defaults on invalid values', () => {
@@ -121,5 +139,39 @@ describe('Storage Layer & Persistence', () => {
   it.each([null, [], 'notes', 42])('replaces non-record lessonNotes value %p with an empty record', (lessonNotes) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ lessonNotes }));
     expect(loadStudyState().lessonNotes).toEqual({});
+  });
+
+  it('keeps valid practice progress and drops malformed lesson records', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      bookmarkedLessons: ['020'],
+      lessonNotes: { '020': 'Keep this note' },
+      practiceProgress: {
+        '020': {
+          questionIndex: 1,
+          answers: { '020-precedence': 0 },
+          score: 1,
+          completed: false
+        },
+        '021': {
+          questionIndex: -1,
+          answers: { '021-index': 'bad' },
+          score: 0,
+          completed: false
+        },
+        '022': 'not-a-progress-record'
+      }
+    }));
+
+    const loaded = loadStudyState();
+    expect(loaded.bookmarkedLessons).toEqual(['020']);
+    expect(loaded.lessonNotes).toEqual({ '020': 'Keep this note' });
+    expect(loaded.practiceProgress).toEqual({
+      '020': {
+        questionIndex: 1,
+        answers: { '020-precedence': 0 },
+        score: 1,
+        completed: false
+      }
+    });
   });
 });

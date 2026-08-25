@@ -99,3 +99,10 @@ export interface SearchResult {
   badge: string;
   score: number;
 }
+
+export type {
+  PracticeLesson,
+  PracticeLessonMap,
+  PracticeQuestion,
+  PracticeQuestionType
+} from './practice';

@@ -1,4 +1,4 @@
-import { StudyStateV1, BackupData } from '../types/state';
+import { PracticeProgress, StudyStateV1, BackupData } from '../types/state';
 
 const STORAGE_KEY = 'py_study_workspace_state_v1';
 const BACKUP_VERSION = '1.0.0';
@@ -30,6 +30,40 @@ const isPlainRecord = (value: unknown): value is Record<string, unknown> => {
   return prototype === Object.prototype || prototype === null;
 };
 
+const isNonNegativeInteger = (value: unknown): value is number => (
+  typeof value === 'number' && Number.isInteger(value) && value >= 0
+);
+
+const sanitizePracticeProgress = (value: unknown): Record<string, PracticeProgress> => {
+  if (!isPlainRecord(value)) return {};
+
+  const sanitized: Record<string, PracticeProgress> = {};
+  for (const [lessonId, rawProgress] of Object.entries(value)) {
+    if (!isPlainRecord(rawProgress)) continue;
+
+    const answersValue = rawProgress.answers;
+    if (!isNonNegativeInteger(rawProgress.questionIndex)) continue;
+    if (!isNonNegativeInteger(rawProgress.score)) continue;
+    if (typeof rawProgress.completed !== 'boolean' || !isPlainRecord(answersValue)) continue;
+
+    const answers = Object.fromEntries(
+      Object.entries(answersValue).filter(([questionId, answer]) => (
+        questionId.trim().length > 0
+        && isNonNegativeInteger(answer)
+      ))
+    ) as Record<string, number>;
+
+    sanitized[lessonId] = {
+      questionIndex: rawProgress.questionIndex,
+      answers,
+      score: rawProgress.score,
+      completed: rawProgress.completed
+    };
+  }
+
+  return sanitized;
+};
+
 const sanitizeState = (candidate: Record<string, unknown>): StudyStateV1 => ({
   version: 1,
   completedLessons: uniqueStrings(candidate.completedLessons),
@@ -48,6 +82,7 @@ const sanitizeState = (candidate: Record<string, unknown>): StudyStateV1 => ({
   preferredMode: candidate.preferredMode === 'quickReview' || candidate.preferredMode === 'detailed'
     ? candidate.preferredMode
     : 'detailed',
+  practiceProgress: sanitizePracticeProgress(candidate.practiceProgress),
   updatedAt: typeof candidate.updatedAt === 'string' ? candidate.updatedAt : new Date().toISOString()
 });
 
@@ -61,6 +96,7 @@ export const INITIAL_STATE: StudyStateV1 = {
   recentLessonIds: ['020'],
   theme: 'system',
   preferredMode: 'detailed',
+  practiceProgress: {},
   updatedAt: new Date().toISOString()
 };
 

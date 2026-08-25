@@ -22,6 +22,7 @@ playwright/.cache/
 
 # Temporary scratch
 scratch/
+tmp/practice-drafts/
 
 # Logs
 npm-debug.log*

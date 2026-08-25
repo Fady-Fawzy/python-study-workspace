@@ -1,6 +1,8 @@
 import React, { KeyboardEvent } from 'react';
-import { BookOpen, Check, Maximize2, Minimize2, Zap } from 'lucide-react';
+import { BookOpen, Check, ClipboardCheck, Maximize2, Minimize2, Zap } from 'lucide-react';
 import { BookmarkButton } from '../shared/BookmarkButton';
+
+type StudyMode = 'detailed' | 'quickReview' | 'practice';
 
 interface LessonHeaderProps {
   lessonId: string;
@@ -8,15 +10,14 @@ interface LessonHeaderProps {
   category: string;
   isCompleted: boolean;
   isBookmarked: boolean;
-  activeMode: 'detailed' | 'quickReview';
+  activeMode: StudyMode;
+  hasPractice?: boolean;
   onToggleComplete: () => void;
   onToggleBookmark: () => void;
-  onModeChange: (mode: 'detailed' | 'quickReview') => void;
+  onModeChange: (mode: StudyMode) => void;
   isFullView?: boolean;
   onToggleFullView?: (active: boolean) => void;
 }
-
-const modes = ['detailed', 'quickReview'] as const;
 
 export const LessonHeader: React.FC<LessonHeaderProps> = ({
   lessonId,
@@ -25,12 +26,17 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
   isCompleted,
   isBookmarked,
   activeMode,
+  hasPractice = false,
   onToggleComplete,
   onToggleBookmark,
   onModeChange,
   isFullView = false,
   onToggleFullView = () => undefined
 }) => {
+  const modes: StudyMode[] = hasPractice
+    ? ['detailed', 'quickReview', 'practice']
+    : ['detailed', 'quickReview'];
+
   const selectMode = (mode: typeof modes[number]) => {
     onModeChange(mode);
     window.requestAnimationFrame(() => {
@@ -104,7 +110,12 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
 
       <h1 className="lesson-header__title" dir="auto">{title}</h1>
 
-      <div className="lesson-mode-switch" role="tablist" aria-label="Study mode">
+      <div
+        className="lesson-mode-switch"
+        data-mode-count={modes.length}
+        role="tablist"
+        aria-label="Study mode"
+      >
         <button
           id={`lesson-${lessonId}-detailed-tab`}
           type="button"
@@ -136,6 +147,24 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
           <Zap size={17} aria-hidden="true" />
           <span>Quick Review</span>
         </button>
+
+        {hasPractice && (
+          <button
+            id={`lesson-${lessonId}-practice-tab`}
+            type="button"
+            role="tab"
+            className="lesson-mode-switch__tab lesson-mode-switch__tab--practice"
+            data-selected={activeMode === 'practice' || undefined}
+            aria-selected={activeMode === 'practice'}
+            aria-controls={`lesson-${lessonId}-mode-panel`}
+            tabIndex={activeMode === 'practice' ? 0 : -1}
+            onClick={() => onModeChange('practice')}
+            onKeyDown={(event) => handleModeKeyDown(event, 'practice')}
+          >
+            <ClipboardCheck size={17} aria-hidden="true" />
+            <span>Practice</span>
+          </button>
+        )}
       </div>
     </header>
   );

@@ -3,7 +3,9 @@ import lessonsRaw from '../elzero_python_lessons_20_to_74.md?raw';
 import syntaxRaw from '../python_syntax_reference_elzero_20_74.md?raw';
 import { parseLessons, parseSyntaxReference } from './lib/contentParser';
 import { parseDetailedLessonSources } from './lib/detailedContent';
+import { parsePracticeLessons } from './lib/practiceContent';
 import { DETAILED_LESSON_SOURCES } from './content/detailed';
+import { PRACTICE_LESSON_SOURCES } from './content/practice';
 import { buildSearchIndex } from './lib/searchIndex';
 import { loadStudyState, saveStudyState } from './lib/storage';
 import { parseRoute, normalizePath } from './lib/routing';
@@ -21,6 +23,10 @@ export function App() {
   const syntaxSections = useMemo(() => parseSyntaxReference(syntaxRaw), []);
   const detailedLessons = useMemo(
     () => parseDetailedLessonSources(DETAILED_LESSON_SOURCES),
+    []
+  );
+  const practiceLessons = useMemo(
+    () => parsePracticeLessons(PRACTICE_LESSON_SOURCES),
     []
   );
   const searchIndex = useMemo(
@@ -117,6 +123,7 @@ export function App() {
             lessonId={route.lessonId}
             lessons={lessons}
             detailedLessons={detailedLessons}
+            practiceLessons={practiceLessons}
             syntaxSections={syntaxSections}
             state={state}
             onUpdateState={updateState}

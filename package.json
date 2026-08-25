@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "practice:draft": "node scripts/generate-practice-draft.mjs",
+    "practice:test": "node --test scripts/generate-practice-draft.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",

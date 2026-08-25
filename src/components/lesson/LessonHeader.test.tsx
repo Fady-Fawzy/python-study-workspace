@@ -71,4 +71,15 @@ describe('LessonHeader', () => {
     await user.click(exitButton);
     expect(exitProps.onToggleFullView).toHaveBeenCalledWith(false);
   });
+
+  it('adds Practice to the tablist only when the lesson has a practice bank', async () => {
+    const user = userEvent.setup();
+    const props = renderHeader({ hasPractice: true });
+
+    const practice = screen.getByRole('tab', { name: 'Practice' });
+    expect(practice).toHaveAttribute('aria-selected', 'false');
+
+    await user.click(practice);
+    expect(props.onModeChange).toHaveBeenCalledWith('practice');
+  });
 });
