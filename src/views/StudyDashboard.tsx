@@ -11,7 +11,9 @@ import {
   Play
 } from 'lucide-react';
 import { LESSON_CATEGORIES } from '../lib/lessonMapping';
+import { getNextLessonRecommendation, RecommendationReason } from '../lib/nextLesson';
 import { readReadingPosition } from '../lib/readingPosition';
+import { readReadingProgress } from '../lib/readingProgress';
 import { getStudyActivitySummary, readStudyActivity, StudyActivity } from '../lib/studyActivity';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
@@ -32,6 +34,13 @@ function lessonActionLabel(lesson: Lesson, isCompleted = false) {
 function metricLabel(value: number, singular: string, plural = `${singular}s`) {
   return `${value} ${value === 1 ? singular : plural}`;
 }
+
+const recommendationLabels: Record<Exclude<RecommendationReason, null>, string> = {
+  resume: 'Resume where you left off',
+  continue: 'Continue the sequence',
+  bookmark: 'From your bookmarks',
+  start: 'Start the course'
+};
 
 export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   lessons,
@@ -56,12 +65,20 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
     activityNow ?? new Date(),
     activity ?? readStudyActivity()
   );
-  const nextLesson = lessons.find((lesson) => !completedIds.has(lesson.id));
+  const recommendation = getNextLessonRecommendation(
+    lessons,
+    completedIds,
+    state.bookmarkedLessons,
+    state.lastOpenedLessonId,
+    readReadingProgress
+  );
+  const nextLesson = recommendation.lesson;
 
   const savedLesson = lessons.find((lesson) => lesson.id === state.lastOpenedLessonId);
   const lastLesson = savedLesson ?? lessons[0];
   const hasSavedLesson = Boolean(savedLesson);
   const hasSavedReadingPosition = Boolean(lastLesson && readReadingPosition(lastLesson.id) > 0);
+  const lastLessonProgress = lastLesson ? readReadingProgress(lastLesson.id) : 0;
 
   const recentLessons = state.recentLessonIds
     .map((id) => lessons.find((lesson) => lesson.id === id))
@@ -88,12 +105,27 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
             <h1 className="dashboard-continue__title">{lastLesson.title}</h1>
             <p className="dashboard-continue__meta">{lastLesson.category}</p>
             <p className="dashboard-continue__resume-note">
-              {hasSavedReadingPosition
-                ? 'Saved reading position ready to resume.'
+              {lastLessonProgress > 0
+                ? `Saved reading position at ${lastLessonProgress}% — ready to resume.`
+                : hasSavedReadingPosition
+                  ? 'Saved reading position ready to resume.'
                 : hasSavedLesson
                   ? 'Continue from this lesson whenever you are ready.'
                   : 'Start your first lesson and build your study trail.'}
             </p>
+            {lastLessonProgress > 0 && (
+              <div className="dashboard-continue__progress">
+                <div className="dashboard-continue__progress-header">
+                  <span>Reading progress</span>
+                  <strong dir="ltr">{lastLessonProgress}%</strong>
+                </div>
+                <progress
+                  value={lastLessonProgress}
+                  max={100}
+                  aria-label={`Lesson ${lastLesson.id} reading progress`}
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -201,6 +233,11 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
             <div className="dashboard-overview__next-copy">
               <span className="dashboard-overview__next-label">Next up</span>
               <strong>Lesson {nextLesson.id}: {nextLesson.title}</strong>
+              {recommendation.reason && (
+                <span className="dashboard-overview__next-reason">
+                  {recommendationLabels[recommendation.reason]}
+                </span>
+              )}
             </div>
             <button
               type="button"

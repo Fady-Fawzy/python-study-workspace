@@ -9,6 +9,7 @@ import { QuickReviewContent } from '../components/lesson/QuickReviewContent';
 import { PracticeContent } from '../components/lesson/PracticeContent';
 import { TableOfContents } from '../components/lesson/TableOfContents';
 import { LessonReadingControls } from '../components/lesson/LessonReadingControls';
+import { LessonProgressBar } from '../components/lesson/LessonProgressBar';
 import { LessonNotes } from '../components/lesson/LessonNotes';
 import { LessonPagination } from '../components/lesson/LessonPagination';
 import { LessonSyntaxLinks } from '../components/lesson/LessonSyntaxLinks';
@@ -216,6 +217,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
           isFullView={isFullView}
           onToggleFullView={onFullViewChange}
         />
+
+        <LessonProgressBar lessonId={lesson.id} />
 
         {activeMode === 'detailed' && detailedToc.length > 1 && (
           <TableOfContents items={detailedToc} variant="mobile" />

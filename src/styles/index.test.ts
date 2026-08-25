@@ -107,4 +107,18 @@ describe('markdown styling contracts', () => {
     expect(stylesheet).toMatch(/\.dashboard-topic,[\s\S]*?content-visibility:\s*auto;/s);
     expect(stylesheet).toMatch(/contain-intrinsic-size:\s*auto\s+180px;/s);
   });
+
+  it('gives lesson and dashboard reading progress a compact, theme-aware meter', () => {
+    expect(stylesheet).toMatch(
+      /\.lesson-progress\s*\{[^}]*min-inline-size:\s*0;[^}]*max-inline-size:\s*100%;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-progress progress,[\s\S]*?\.dashboard-continue__progress progress\s*\{[^}]*inline-size:\s*100%;/s
+    );
+    expect(stylesheet).toMatch(/\.dashboard-continue__progress-header\s*\{[^}]*display:\s*flex;/s);
+    expect(stylesheet).toMatch(/\.dashboard-overview__next-reason\s*\{[^}]*color:\s*var\(--text-muted\);/s);
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.dashboard-continue__progress\s*\{[^}]*max-inline-size:\s*100%;/s
+    );
+  });
 });

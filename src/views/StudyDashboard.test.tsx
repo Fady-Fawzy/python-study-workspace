@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { writeReadingPosition } from '../lib/readingPosition';
+import { writeReadingProgress } from '../lib/readingProgress';
 import { Lesson } from '../types/content';
 import { StudyStateV1 } from '../types/state';
 import { StudyDashboard } from './StudyDashboard';
@@ -133,6 +134,30 @@ describe('study dashboard', () => {
 
     await user.click(within(overview).getByRole('button', { name: /open next lesson 021/i }));
     expect(onNavigate).toHaveBeenLastCalledWith('/lesson/021');
+  });
+
+  it('shows saved reading progress and explains when the recommendation resumes', () => {
+    localStorage.clear();
+    writeReadingPosition('021', 480);
+    writeReadingProgress('021', 37);
+    renderDashboard({ lastOpenedLessonId: '021' });
+
+    const continueRegion = screen.getByRole('region', { name: /continue studying/i });
+    expect(within(continueRegion).getByText('37%')).toBeInTheDocument();
+    expect(within(continueRegion).getByRole('progressbar', { name: /lesson 021 reading progress/i })).toHaveValue(37);
+
+    const overview = screen.getByRole('region', { name: /study overview/i });
+    expect(within(overview).getByText(/resume where you left off/i)).toBeInTheDocument();
+    expect(within(overview).getByRole('button', { name: /open next lesson 021/i })).toBeInTheDocument();
+  });
+
+  it('uses an incomplete bookmark when there is no saved lesson to resume', () => {
+    localStorage.clear();
+    renderDashboard({ bookmarkedLessons: ['074'] });
+
+    const overview = screen.getByRole('region', { name: /study overview/i });
+    expect(within(overview).getByText(/from your bookmarks/i)).toBeInTheDocument();
+    expect(within(overview).getByRole('button', { name: /open next lesson 074/i })).toBeInTheDocument();
   });
 
   it('shows a useful recent-lessons empty state', () => {
