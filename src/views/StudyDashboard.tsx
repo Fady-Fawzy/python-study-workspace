@@ -1,8 +1,15 @@
 import React from 'react';
-import { BookOpen, Bookmark, Clock, Check, ArrowRight, Play } from 'lucide-react';
+import {
+  ArrowRight,
+  Bookmark,
+  BookOpen,
+  Check,
+  Clock,
+  Play
+} from 'lucide-react';
+import { LESSON_CATEGORIES } from '../lib/lessonMapping';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
-import { LESSON_CATEGORIES } from '../lib/lessonMapping';
 
 interface StudyDashboardProps {
   lessons: Lesson[];
@@ -11,359 +18,247 @@ interface StudyDashboardProps {
   onNavigate: (path: string) => void;
 }
 
+function lessonActionLabel(lesson: Lesson, isCompleted = false) {
+  return `Lesson ${lesson.id}: ${lesson.title}${isCompleted ? ', completed' : ''}`;
+}
+
 export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   lessons,
   state,
   onNavigate
 }) => {
-  const completedCount = state.completedLessons.length;
-  const progressPercent = Math.round((completedCount / 55) * 100);
+  const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+  const completedIds = new Set(
+    state.completedLessons.filter((lessonId) => lessonIds.has(lessonId))
+  );
+  const completedCount = completedIds.size;
+  const totalLessons = lessons.length;
+  const progressPercent = totalLessons > 0
+    ? Math.round((completedCount / totalLessons) * 100)
+    : 0;
 
-  // Last opened lesson
-  const lastLessonId = state.lastOpenedLessonId || '020';
-  const lastLesson = lessons.find(l => l.id === lastLessonId) || lessons[0];
+  const savedLesson = lessons.find((lesson) => lesson.id === state.lastOpenedLessonId);
+  const lastLesson = savedLesson ?? lessons[0];
 
-  // Recently opened lessons
   const recentLessons = state.recentLessonIds
-    .map((id: string) => lessons.find(l => l.id === id))
-    .filter((l): l is Lesson => Boolean(l))
+    .map((id) => lessons.find((lesson) => lesson.id === id))
+    .filter((lesson): lesson is Lesson => Boolean(lesson))
     .slice(0, 5);
 
-  // Bookmarked lessons
   const bookmarkedLessons = state.bookmarkedLessons
-    .map((id: string) => lessons.find(l => l.id === id))
-    .filter((l): l is Lesson => Boolean(l))
+    .map((id) => lessons.find((lesson) => lesson.id === id))
+    .filter((lesson): lesson is Lesson => Boolean(lesson))
     .slice(0, 5);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* 1. Continue Studying Hero Banner */}
-      <div
-        style={{
-          padding: 'var(--space-5)',
-          backgroundColor: 'var(--bg-surface)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border-default)',
-          boxShadow: 'var(--shadow-sm)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-4)'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--accent-primary-muted)',
-                color: 'var(--accent-primary)',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600
-              }}
-            >
-              <Play size={10} fill="currentColor" />
-              Continue Studying
+    <div className="dashboard">
+      {lastLesson && (
+        <section className="dashboard-continue ui-card" aria-label="Continue Studying">
+          <div className="dashboard-continue__content">
+            <div className="dashboard-eyebrow">
+              <span className="dashboard-eyebrow__label">
+                <Play size={12} fill="currentColor" aria-hidden="true" />
+                Continue Studying
+              </span>
+              <span className="dashboard-lesson-number">Lesson {lastLesson.id}</span>
+            </div>
+            <h1 className="dashboard-continue__title">{lastLesson.title}</h1>
+            <p className="dashboard-continue__meta">{lastLesson.category}</p>
+          </div>
+
+          <button
+            type="button"
+            className="dashboard-primary-action"
+            aria-label={`Open Lesson ${lastLesson.id}: ${lastLesson.title}`}
+            onClick={() => onNavigate(`/lesson/${lastLesson.id}`)}
+          >
+            <span>Open Lesson</span>
+            <ArrowRight size={18} aria-hidden="true" />
+          </button>
+        </section>
+      )}
+
+      <section className="dashboard-progress ui-card" aria-labelledby="dashboard-progress-title">
+        <div className="dashboard-progress__summary">
+          <div className="dashboard-section-title">
+            <span className="dashboard-section-title__icon dashboard-section-title__icon--success">
+              <Check size={16} aria-hidden="true" />
             </span>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              Lesson {lastLesson.id}
-            </span>
+            <h2 id="dashboard-progress-title">Course Progress</h2>
           </div>
-          <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
-            {lastLesson.title}
-          </h2>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-            Topic: {lastLesson.category}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onNavigate(`/lesson/${lastLesson.id}`)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '10px 20px',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#ffffff',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            transition: 'opacity var(--transition-fast)',
-            minHeight: '44px'
-          }}
-        >
-          <span>Open Lesson</span>
-          <ArrowRight size={16} />
-        </button>
-      </div>
-
-      {/* 2. Progress Overview (Clean, No fake charts) */}
-      <div
-        style={{
-          padding: 'var(--space-5)',
-          backgroundColor: 'var(--bg-surface)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border-default)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <Check size={16} color="var(--accent-success)" />
-            <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Course Progress</h3>
-          </div>
-          <span style={{ fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {completedCount} / 55 completed ({progressPercent}%)
-          </span>
-        </div>
-
-        {/* Linear progress bar */}
-        <div
-          style={{
-            height: '6px',
-            width: '100%',
-            backgroundColor: 'var(--bg-surface-raised)',
-            borderRadius: 'var(--radius-full)',
-            overflow: 'hidden'
-          }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: `${progressPercent}%`,
-              backgroundColor: 'var(--accent-success)',
-              borderRadius: 'var(--radius-full)',
-              transition: 'width 0.3s ease'
-            }}
-          />
-        </div>
-      </div>
-
-      {/* 3. Two Column Sections: Recent & Bookmarks */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 'var(--space-4)'
-        }}
-      >
-        {/* Recently Viewed */}
-        <div
-          style={{
-            padding: 'var(--space-4)',
-            backgroundColor: 'var(--bg-surface)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-default)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-            <Clock size={15} color="var(--text-muted)" />
-            <h3 style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-              Recently Studied
-            </h3>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {recentLessons.map((l: Lesson) => {
-              const isCompleted = state.completedLessons.includes(l.id);
-              return (
-                <button
-                  key={l.id}
-                  type="button"
-                  onClick={() => onNavigate(`/lesson/${l.id}`)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--text-primary)',
-                    fontSize: 'var(--text-xs)',
-                    textAlign: 'left',
-                    transition: 'background var(--transition-fast)'
-                  }}
-                  className="hover-surface"
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                      {l.id}
-                    </span>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {l.title}
-                    </span>
-                  </div>
-                  {isCompleted && (
-                    <Check size={12} color="var(--accent-success)" strokeWidth={2.5} />
-                  )}
-                </button>
-              );
-            })}
+          <div className="dashboard-progress__numbers">
+            <span>{completedCount} of {totalLessons} lessons completed</span>
+            <strong>{progressPercent}%</strong>
           </div>
         </div>
+        <progress
+          className="dashboard-progress__bar"
+          aria-labelledby="dashboard-progress-title"
+          aria-valuetext={`${completedCount} of ${totalLessons} lessons completed`}
+          value={completedCount}
+          max={Math.max(totalLessons, 1)}
+        />
+      </section>
 
-        {/* Bookmarks */}
-        <div
-          style={{
-            padding: 'var(--space-4)',
-            backgroundColor: 'var(--bg-surface)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-default)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Bookmark size={15} color="var(--accent-gold)" fill="var(--accent-gold)" />
-              <h3 style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-                Saved Bookmarks
-              </h3>
+      <div className="dashboard-resume-grid">
+        <section className="dashboard-list-card ui-card" aria-labelledby="dashboard-recent-title">
+          <header className="dashboard-list-card__header">
+            <div className="dashboard-section-title">
+              <Clock size={17} aria-hidden="true" />
+              <h2 id="dashboard-recent-title">Recently Studied</h2>
+            </div>
+          </header>
+
+          {recentLessons.length === 0 ? (
+            <div className="dashboard-empty-state">
+              <Clock size={20} aria-hidden="true" />
+              <div>
+                <strong>Your recent study list is ready.</strong>
+                <p>Lessons you open will appear here for quick access.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="dashboard-lesson-list">
+              {recentLessons.map((lesson) => {
+                const isCompleted = completedIds.has(lesson.id);
+                return (
+                  <button
+                    key={lesson.id}
+                    type="button"
+                    className="dashboard-lesson-row"
+                    aria-label={lessonActionLabel(lesson, isCompleted)}
+                    onClick={() => onNavigate(`/lesson/${lesson.id}`)}
+                  >
+                    <span className="dashboard-lesson-row__number">{lesson.id}</span>
+                    <span className="dashboard-lesson-row__title">{lesson.title}</span>
+                    {isCompleted ? (
+                      <span className="dashboard-lesson-row__status dashboard-lesson-row__status--complete" aria-hidden="true">
+                        <Check size={14} />
+                      </span>
+                    ) : (
+                      <ArrowRight className="dashboard-lesson-row__arrow" size={15} aria-hidden="true" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-list-card ui-card" aria-labelledby="dashboard-bookmarks-title">
+          <header className="dashboard-list-card__header">
+            <div className="dashboard-section-title">
+              <Bookmark className="dashboard-bookmark-icon" size={17} fill="currentColor" aria-hidden="true" />
+              <h2 id="dashboard-bookmarks-title">Saved Bookmarks</h2>
             </div>
             <button
               type="button"
+              className="dashboard-secondary-action"
               onClick={() => onNavigate('/bookmarks')}
-              style={{ fontSize: '11px', color: 'var(--accent-primary)' }}
             >
-              View all
+              View all bookmarks
             </button>
-          </div>
+          </header>
 
           {bookmarkedLessons.length === 0 ? (
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', padding: 'var(--space-4) 0', textAlign: 'center' }}>
-              No bookmarks yet. Click the bookmark icon on any lesson to save it here.
+            <div className="dashboard-empty-state">
+              <Bookmark size={20} aria-hidden="true" />
+              <div>
+                <strong>Keep useful lessons close.</strong>
+                <p>Bookmark a lesson to keep it within reach here.</p>
+              </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {bookmarkedLessons.map((l: Lesson) => (
+            <div className="dashboard-lesson-list">
+              {bookmarkedLessons.map((lesson) => (
                 <button
-                  key={l.id}
+                  key={lesson.id}
                   type="button"
-                  onClick={() => onNavigate(`/lesson/${l.id}`)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--text-primary)',
-                    fontSize: 'var(--text-xs)',
-                    textAlign: 'left',
-                    transition: 'background var(--transition-fast)'
-                  }}
-                  className="hover-surface"
+                  className="dashboard-lesson-row"
+                  aria-label={lessonActionLabel(lesson, completedIds.has(lesson.id))}
+                  onClick={() => onNavigate(`/lesson/${lesson.id}`)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                      {l.id}
-                    </span>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {l.title}
-                    </span>
-                  </div>
-                  <ArrowRight size={12} color="var(--text-muted)" />
+                  <span className="dashboard-lesson-row__number dashboard-lesson-row__number--bookmark">
+                    {lesson.id}
+                  </span>
+                  <span className="dashboard-lesson-row__title">{lesson.title}</span>
+                  <ArrowRight className="dashboard-lesson-row__arrow" size={15} aria-hidden="true" />
                 </button>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
-      {/* 4. Topic Curriculum Explorer */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <BookOpen size={16} color="var(--accent-primary)" />
-            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>Course Topics (Lessons 20 → 74)</h3>
+      <section className="dashboard-topics" aria-labelledby="dashboard-topics-title">
+        <header className="dashboard-topics__header">
+          <div className="dashboard-section-title dashboard-section-title--large">
+            <BookOpen size={19} aria-hidden="true" />
+            <div>
+              <h2 id="dashboard-topics-title">Course Topics</h2>
+              <p>Browse Lessons 020–074 by topic</p>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {LESSON_CATEGORIES.map((cat) => {
-            const catLessons = lessons.filter(l => l.number >= cat.range[0] && l.number <= cat.range[1]);
-            const completedInCat = catLessons.filter(l => state.completedLessons.includes(l.id)).length;
-            const isCatComplete = completedInCat === catLessons.length && catLessons.length > 0;
+        <div className="dashboard-topic-list">
+          {LESSON_CATEGORIES.map((category) => {
+            const categoryLessons = lessons.filter(
+              (lesson) => lesson.number >= category.range[0] && lesson.number <= category.range[1]
+            );
+            const completedInCategory = categoryLessons.filter((lesson) => completedIds.has(lesson.id)).length;
+            const isCategoryComplete = categoryLessons.length > 0
+              && completedInCategory === categoryLessons.length;
 
             return (
-              <div
-                key={cat.name}
-                style={{
-                  padding: 'var(--space-4)',
-                  backgroundColor: 'var(--bg-surface)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1px solid var(--border-default)',
-                  transition: 'border-color var(--transition-fast)'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                  <div>
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {cat.name}
-                    </span>
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginLeft: 'var(--space-2)' }}>
-                      (Lessons {cat.range[0].toString().padStart(3, '0')} → {cat.range[1].toString().padStart(3, '0')})
+              <article className="dashboard-topic ui-card" key={category.name}>
+                <header className="dashboard-topic__header">
+                  <div className="dashboard-topic__heading">
+                    <h3>{category.name}</h3>
+                    <span>
+                      Lessons {category.range[0].toString().padStart(3, '0')}–{category.range[1].toString().padStart(3, '0')}
                     </span>
                   </div>
                   <span
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      fontFamily: 'var(--font-mono)',
-                      color: isCatComplete ? 'var(--accent-success)' : 'var(--text-muted)',
-                      fontWeight: 500
-                    }}
+                    className="dashboard-topic__progress"
+                    data-complete={isCategoryComplete || undefined}
                   >
-                    {completedInCat}/{catLessons.length} completed
+                    {completedInCategory}/{categoryLessons.length} completed
                   </span>
-                </div>
+                </header>
+                <p className="dashboard-topic__description">{category.description}</p>
 
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
-                  {cat.description}
-                </p>
-
-                {/* Lesson pills */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {catLessons.map((l: Lesson) => {
-                    const isDone = state.completedLessons.includes(l.id);
-                    return (
-                      <button
-                        key={l.id}
-                        type="button"
-                        onClick={() => onNavigate(`/lesson/${l.id}`)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '4px 8px',
-                          borderRadius: 'var(--radius-sm)',
-                          backgroundColor: isDone ? 'var(--accent-success-muted)' : 'var(--bg-surface-raised)',
-                          border: `1px solid ${isDone ? 'var(--accent-success)' : 'var(--border-subtle)'}`,
-                          fontSize: 'var(--text-xs)',
-                          color: isDone ? 'var(--accent-success)' : 'var(--text-secondary)',
-                          transition: 'all var(--transition-fast)'
-                        }}
-                      >
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{l.id}</span>
-                        <span>{l.title}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                {categoryLessons.length > 0 && (
+                  <ul className="dashboard-topic__lessons">
+                    {categoryLessons.map((lesson) => {
+                      const isCompleted = completedIds.has(lesson.id);
+                      return (
+                        <li key={lesson.id}>
+                          <button
+                            type="button"
+                            className="dashboard-topic-lesson"
+                            data-complete={isCompleted || undefined}
+                            aria-label={lessonActionLabel(lesson, isCompleted)}
+                            onClick={() => onNavigate(`/lesson/${lesson.id}`)}
+                          >
+                            <span className="dashboard-topic-lesson__number">{lesson.id}</span>
+                            <span className="dashboard-topic-lesson__title">{lesson.title}</span>
+                            {isCompleted ? (
+                              <Check size={14} aria-hidden="true" />
+                            ) : (
+                              <ArrowRight size={14} aria-hidden="true" />
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </article>
             );
           })}
         </div>
-      </div>
-
-      <style>{`
-        .hover-surface:hover {
-          background-color: var(--bg-surface-hover) !important;
-        }
-      `}</style>
+      </section>
     </div>
   );
 };

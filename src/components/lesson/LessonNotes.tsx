@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FileEdit, Check, RefreshCw } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Check, FileEdit, RefreshCw } from 'lucide-react';
 
 interface LessonNotesProps {
   lessonId: string;
@@ -7,145 +7,192 @@ interface LessonNotesProps {
   onSaveNote: (lessonId: string, note: string) => void;
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved';
+
 export const LessonNotes: React.FC<LessonNotesProps> = ({
   lessonId,
   initialNote,
   onSaveNote
 }) => {
   const [note, setNote] = useState(initialNote || '');
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [prevLessonId, setPrevLessonId] = useState(lessonId);
-  const timerRef = useRef<number | null>(null);
+  const [status, setStatus] = useState<SaveStatus>('idle');
+  const currentLessonRef = useRef(lessonId);
+  const initialNoteRef = useRef(initialNote);
+  const noteRef = useRef(initialNote || '');
+  const dirtyRef = useRef(false);
+  const saveTimerRef = useRef<number | null>(null);
+  const statusTimerRef = useRef<number | null>(null);
+  const saveVersionRef = useRef(0);
+  const onSaveRef = useRef(onSaveNote);
+  const observedInitialNoteRef = useRef({ lessonId, note: initialNote });
 
-  if (prevLessonId !== lessonId) {
-    setPrevLessonId(lessonId);
-    setNote(initialNote || '');
-    setStatus('idle');
-  }
+  initialNoteRef.current = initialNote;
+  onSaveRef.current = onSaveNote;
+
+  const clearSaveTimer = () => {
+    saveVersionRef.current += 1;
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+  };
+
+  const clearStatusTimer = () => {
+    if (statusTimerRef.current !== null) {
+      window.clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
+  };
+
+  const showSavedStatus = () => {
+    clearStatusTimer();
+    setStatus('saved');
+    statusTimerRef.current = window.setTimeout(() => {
+      setStatus('idle');
+      statusTimerRef.current = null;
+    }, 1600);
+  };
+
+  const flushPendingNote = () => {
+    clearSaveTimer();
+    if (!dirtyRef.current) return false;
+    dirtyRef.current = false;
+    onSaveRef.current(currentLessonRef.current, noteRef.current);
+    return true;
+  };
 
   useEffect(() => {
+    currentLessonRef.current = lessonId;
+    const nextNote = initialNoteRef.current || '';
+    noteRef.current = nextNote;
+    dirtyRef.current = false;
+    setNote(nextNote);
+    setStatus('idle');
+
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (statusTimerRef.current !== null) {
+        window.clearTimeout(statusTimerRef.current);
+        statusTimerRef.current = null;
+      }
+      saveVersionRef.current += 1;
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (dirtyRef.current) {
+        const pendingNote = noteRef.current;
+        dirtyRef.current = false;
+        onSaveRef.current(currentLessonRef.current, pendingNote);
       }
     };
-  }, []);
+    // The lesson identity intentionally owns the editing lifecycle. Changes to
+    // initialNote caused by this component's own save must not reset the draft.
+  }, [lessonId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
-    setNote(val);
-    setStatus('saving');
+  useEffect(() => {
+    const previous = observedInitialNoteRef.current;
+    observedInitialNoteRef.current = { lessonId, note: initialNote };
 
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
+    if (previous.lessonId !== lessonId || previous.note === initialNote) return;
+
+    // A same-lesson prop replacement comes from an external state operation
+    // such as Backup Restore. It is authoritative and must cancel, not flush,
+    // an older local draft. A reflected value from our own save already equals
+    // noteRef and can keep the current Saved feedback intact.
+    if (initialNote === noteRef.current && !dirtyRef.current) return;
+
+    if (statusTimerRef.current !== null) {
+      window.clearTimeout(statusTimerRef.current);
+      statusTimerRef.current = null;
+    }
+    saveVersionRef.current += 1;
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
     }
 
-    timerRef.current = window.setTimeout(() => {
-      onSaveNote(lessonId, val);
-      setStatus('saved');
-      setTimeout(() => {
-        setStatus('idle');
-      }, 2000);
+    const restoredNote = initialNote || '';
+    dirtyRef.current = false;
+    noteRef.current = restoredNote;
+    setNote(restoredNote);
+    setStatus('idle');
+  }, [initialNote, lessonId]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const nextNote = event.target.value;
+    setNote(nextNote);
+    noteRef.current = nextNote;
+    dirtyRef.current = true;
+    setStatus('saving');
+    clearStatusTimer();
+    clearSaveTimer();
+
+    const saveVersion = saveVersionRef.current;
+    const scheduledLessonId = currentLessonRef.current;
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null;
+      if (
+        saveVersion !== saveVersionRef.current
+        || scheduledLessonId !== currentLessonRef.current
+        || !dirtyRef.current
+      ) return;
+
+      const pendingNote = noteRef.current;
+      dirtyRef.current = false;
+      onSaveRef.current(scheduledLessonId, pendingNote);
+      showSavedStatus();
     }, 600);
   };
 
   const handleBlur = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    onSaveNote(lessonId, note);
-    setStatus('saved');
-    setTimeout(() => {
-      setStatus('idle');
-    }, 1500);
+    if (flushPendingNote()) showSavedStatus();
   };
 
-  return (
-    <div
-      style={{
-        marginTop: 'var(--space-8)',
-        padding: 'var(--space-5)',
-        backgroundColor: 'var(--bg-surface)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border-default)',
-        boxShadow: 'var(--shadow-sm)'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 'var(--space-3)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <FileEdit size={16} color="var(--accent-primary)" />
-          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Personal Study Notes
-          </span>
-        </div>
+  const statusText = status === 'saving'
+    ? 'Saving…'
+    : status === 'saved'
+      ? 'Saved'
+      : 'Changes save automatically';
 
-        {/* Subtle Saving Indicator */}
-        <div style={{ fontSize: 'var(--text-xs)', minHeight: '20px', display: 'flex', alignItems: 'center' }}>
-          {status === 'saving' && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
-              <RefreshCw size={12} className="spin-icon" />
-              <span>Saving...</span>
-            </span>
-          )}
-          {status === 'saved' && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent-success)' }}>
-              <Check size={12} strokeWidth={2.5} />
-              <span>Saved ✓</span>
-            </span>
-          )}
+  return (
+    <section className="lesson-notes" aria-labelledby={`lesson-${lessonId}-notes-title`}>
+      <div className="lesson-notes__header">
+        <label
+          id={`lesson-${lessonId}-notes-title`}
+          className="lesson-notes__title"
+          htmlFor={`lesson-${lessonId}-notes`}
+        >
+          <FileEdit size={18} aria-hidden="true" />
+          <span>Personal Study Notes</span>
+        </label>
+
+        <div
+          className="lesson-notes__status"
+          data-status={status}
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {status === 'saving' && <RefreshCw size={14} className="spin-icon" aria-hidden="true" />}
+          {status === 'saved' && <Check size={14} aria-hidden="true" />}
+          <span>{statusText}</span>
         </div>
       </div>
 
       <textarea
+        id={`lesson-${lessonId}-notes`}
+        className="lesson-notes__textarea"
         value={note}
         onChange={handleChange}
         onBlur={handleBlur}
-        placeholder="Write key takeaways, mental models, code snippets, or gotchas for this lesson... (Autosaved)"
+        placeholder="Write key takeaways, mental models, code snippets, or gotchas for this lesson…"
         dir="auto"
-        style={{
-          width: '100%',
-          minHeight: '120px',
-          padding: 'var(--space-3)',
-          backgroundColor: 'var(--bg-surface-raised)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--text-primary)',
-          fontSize: 'var(--text-sm)',
-          lineHeight: 'var(--leading-relaxed)',
-          resize: 'vertical',
-          outline: 'none',
-          fontFamily: 'var(--font-sans)',
-          transition: 'border-color var(--transition-fast)'
-        }}
+        aria-describedby={`lesson-${lessonId}-notes-help`}
       />
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginTop: 'var(--space-1)',
-          fontSize: '11px',
-          color: 'var(--text-muted)'
-        }}
-      >
+      <div id={`lesson-${lessonId}-notes-help`} className="lesson-notes__footer">
+        <span>Autosaved on this device</span>
         <span>{note.length} characters</span>
       </div>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .spin-icon {
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
-    </div>
+    </section>
   );
 };

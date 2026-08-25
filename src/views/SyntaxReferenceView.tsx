@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Code2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Code2, Search } from 'lucide-react';
 import { marked } from 'marked';
 import { SyntaxSection, SyntaxSubsection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
@@ -33,273 +33,187 @@ export const SyntaxReferenceView: React.FC<SyntaxReferenceViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (initialSectionId) {
-      const el = document.getElementById(`syntax-section-${initialSectionId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
+    if (initialSectionId == null) return;
+
+    const section = document.getElementById(`syntax-section-${initialSectionId}`);
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    section.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start'
+    });
   }, [initialSectionId]);
 
-  // Filter sections by category and search
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const section of syntaxSections) {
+      counts.set(section.category, (counts.get(section.category) ?? 0) + 1);
+    }
+    return counts;
+  }, [syntaxSections]);
+
   const filteredSections = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLocaleLowerCase();
 
-    return syntaxSections.filter(sec => {
-      // Category match
-      if (selectedCategory !== 'All' && sec.category !== selectedCategory) {
-        return false;
-      }
-
+    return syntaxSections.filter(section => {
+      if (selectedCategory !== 'All' && section.category !== selectedCategory) return false;
       if (!query) return true;
 
-      // Query match in title, section number, methods, or raw text
       return (
-        sec.number.toString().includes(query) ||
-        sec.title.toLowerCase().includes(query) ||
-        sec.methods.some((m: string) => m.toLowerCase().includes(query)) ||
-        sec.subsections.some((s: SyntaxSubsection) => s.heading.toLowerCase().includes(query) || s.content.toLowerCase().includes(query))
+        section.number.toString().includes(query) ||
+        section.title.toLocaleLowerCase().includes(query) ||
+        section.methods.some(method => method.toLocaleLowerCase().includes(query)) ||
+        section.subsections.some(subsection =>
+          subsection.heading.toLocaleLowerCase().includes(query) ||
+          subsection.content.toLocaleLowerCase().includes(query)
+        ) ||
+        section.rawMarkdown.toLocaleLowerCase().includes(query)
       );
     });
   }, [syntaxSections, selectedCategory, searchQuery]);
 
-  const handleToggleBookmark = (secId: number) => {
-    onUpdateState(prev => {
-      const exists = prev.bookmarkedSyntax.includes(secId);
-      const updated = exists
-        ? prev.bookmarkedSyntax.filter((id: number) => id !== secId)
-        : [...prev.bookmarkedSyntax, secId];
-      return { ...prev, bookmarkedSyntax: updated };
+  const handleToggleBookmark = (sectionId: number) => {
+    onUpdateState(previous => {
+      const exists = previous.bookmarkedSyntax.includes(sectionId);
+      const bookmarkedSyntax = exists
+        ? previous.bookmarkedSyntax.filter(id => id !== sectionId)
+        : [...previous.bookmarkedSyntax, sectionId];
+
+      return { ...previous, bookmarkedSyntax };
     });
   };
 
+  const categoryButtons = [
+    { name: 'All', count: syntaxSections.length },
+    ...SYNTAX_CATEGORIES.map(category => ({
+      name: category.name,
+      count: categoryCounts.get(category.name) ?? 0
+    }))
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Header & Description */}
-      <div
-        style={{
-          paddingBottom: 'var(--space-4)',
-          borderBottom: '1px solid var(--border-subtle)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
-          <Code2 size={20} color="var(--accent-primary)" />
-          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
-            Python Syntax Reference & Cheat Sheet
-          </h1>
+    <div className="syntax-reference">
+      <header className="syntax-reference__header">
+        <div className="syntax-reference__eyebrow">
+          <Code2 size={18} aria-hidden="true" />
+          <span>Lessons 20–74</span>
         </div>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-          Comprehensive practical reference covering all 67 syntax sections from Lessons 20 → 74.
-        </p>
-      </div>
+        <h1>Python Syntax Reference &amp; Cheat Sheet</h1>
+        <p>Comprehensive practical reference covering all 67 syntax sections from Lessons 20 → 74.</p>
+      </header>
 
-      {/* Search & Category Filter Toolbar */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-3)',
-          backgroundColor: 'var(--bg-surface)',
-          padding: 'var(--space-4)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border-default)'
-        }}
-      >
-        {/* Search input */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '8px 12px',
-            backgroundColor: 'var(--bg-surface-raised)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-subtle)'
-          }}
-        >
-          <Search size={16} color="var(--text-muted)" />
+      <section className="syntax-toolbar" aria-label="Filter syntax reference">
+        <label className="syntax-search">
+          <span className="visually-hidden">Search syntax reference</span>
+          <Search size={18} aria-hidden="true" />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search syntax, methods (e.g. append, kwargs, lambda, reduce)..."
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontSize: 'var(--text-sm)',
-              color: 'var(--text-primary)'
-            }}
+            onChange={event => setSearchQuery(event.target.value)}
+            placeholder="Search syntax, methods, or examples…"
+            autoComplete="off"
           />
-        </div>
+        </label>
 
-        {/* Category Pills */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '6px'
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('All')}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: selectedCategory === 'All' ? 600 : 500,
-              backgroundColor: selectedCategory === 'All' ? 'var(--accent-primary)' : 'var(--bg-surface-raised)',
-              color: selectedCategory === 'All' ? '#ffffff' : 'var(--text-secondary)',
-              border: '1px solid var(--border-subtle)',
-              transition: 'all var(--transition-fast)'
-            }}
-          >
-            All ({syntaxSections.length})
-          </button>
-
-          {SYNTAX_CATEGORIES.map(cat => {
-            const count = syntaxSections.filter(s => cat.sectionIds.includes(s.id)).length;
+        <div className="syntax-categories" role="group" aria-label="Syntax categories">
+          {categoryButtons.map(category => {
+            const isSelected = selectedCategory === category.name;
 
             return (
               <button
-                key={cat.name}
+                key={category.name}
                 type="button"
-                onClick={() => setSelectedCategory(cat.name)}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: selectedCategory === cat.name ? 600 : 500,
-                  backgroundColor: selectedCategory === cat.name ? 'var(--accent-primary)' : 'var(--bg-surface-raised)',
-                  color: selectedCategory === cat.name ? '#ffffff' : 'var(--text-secondary)',
-                  border: '1px solid var(--border-subtle)',
-                  transition: 'all var(--transition-fast)'
-                }}
+                className="syntax-category"
+                aria-pressed={isSelected}
+                data-selected={isSelected || undefined}
+                onClick={() => setSelectedCategory(category.name)}
               >
-                {cat.name} ({count})
+                <span>{category.name}</span>
+                <span className="syntax-category__count" aria-hidden="true">
+                  {category.count}
+                </span>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Filtered Sections Documentation Stream */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+        <p className="syntax-toolbar__summary" aria-live="polite">
+          Showing <strong>{filteredSections.length}</strong> of {syntaxSections.length} sections
+        </p>
+      </section>
+
+      <div className="syntax-sections">
         {filteredSections.length === 0 ? (
-          <div style={{ padding: 'var(--space-12) 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No syntax sections found matching &ldquo;{searchQuery}&rdquo;.
+          <div className="syntax-empty" role="status">
+            <Search size={22} aria-hidden="true" />
+            <div>
+              <h2>No matching syntax sections</h2>
+              <p>
+                No results for <bdi>&ldquo;{searchQuery.trim()}&rdquo;</bdi> in{' '}
+                <bdi>{selectedCategory === 'All' ? 'all categories' : selectedCategory}</bdi>.
+              </p>
+            </div>
           </div>
         ) : (
-          filteredSections.map(sec => {
-            const isBookmarked = state.bookmarkedSyntax.includes(sec.id);
+          filteredSections.map(section => {
+            const titleId = `syntax-section-title-${section.id}`;
+            const isBookmarked = state.bookmarkedSyntax.includes(section.id);
 
             return (
               <article
-                key={sec.id}
-                id={`syntax-section-${sec.id}`}
-                style={{
-                  scrollMarginTop: '80px',
-                  backgroundColor: 'var(--bg-surface)',
-                  borderRadius: 'var(--radius-lg)',
-                  border: `1px solid ${sec.isSpecialSection ? 'var(--accent-gold)' : 'var(--border-default)'}`,
-                  padding: 'var(--space-5)',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
+                key={section.id}
+                id={`syntax-section-${section.id}`}
+                className="syntax-section"
+                data-special={section.isSpecialSection || undefined}
+                aria-labelledby={titleId}
               >
-                {/* Section Header */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingBottom: 'var(--space-3)',
-                    marginBottom: 'var(--space-4)',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    flexWrap: 'wrap',
-                    gap: 'var(--space-2)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: sec.isSpecialSection ? 'var(--accent-gold-muted)' : 'var(--accent-primary-muted)',
-                        color: sec.isSpecialSection ? 'var(--accent-gold)' : 'var(--accent-primary)',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 600
-                      }}
-                    >
-                      #{sec.id}
-                    </span>
-                    <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {sec.title}
+                <header className="syntax-section__header">
+                  <div className="syntax-section__heading">
+                    <span className="syntax-section__number">#{section.id}</span>
+                    <h2 id={titleId} dir="auto">
+                      <bdi>{section.title}</bdi>
                     </h2>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: 'var(--bg-badge)',
-                        color: 'var(--text-muted)'
-                      }}
-                    >
-                      {sec.category}
+                  <div className="syntax-section__actions">
+                    <span className="syntax-section__category">
+                      <bdi>{section.category}</bdi>
                     </span>
                     <BookmarkButton
                       isBookmarked={isBookmarked}
-                      onToggle={() => handleToggleBookmark(sec.id)}
+                      onToggle={() => handleToggleBookmark(section.id)}
                       title="Bookmark this syntax section"
                     />
                   </div>
-                </div>
+                </header>
 
-                {/* Subsections & Code Blocks */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                  {sec.subsections.map((sub: SyntaxSubsection) => (
-                    <div key={sub.id} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                      {sub.heading && (
-                        <h3
-                          dir="auto"
-                          className="arabic-text"
-                          style={{
-                            fontSize: 'var(--text-base)',
-                            fontWeight: 600,
-                            color: 'var(--text-primary)',
-                            marginTop: 'var(--space-2)'
-                          }}
-                        >
-                          {sub.heading}
+                <div className="syntax-section__content">
+                  {section.subsections.map((subsection: SyntaxSubsection) => (
+                    <section className="syntax-subsection" key={subsection.id}>
+                      {subsection.heading && (
+                        <h3 dir="auto" className="arabic-text">
+                          {subsection.heading}
                         </h3>
                       )}
 
-                      {sub.content.trim() && (
+                      {subsection.content.trim() && (
                         <div
                           dir="auto"
-                          className="arabic-text"
-                          style={{
-                            fontSize: 'var(--text-sm)',
-                            color: 'var(--text-secondary)',
-                            lineHeight: 'var(--leading-arabic)'
-                          }}
-                          dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
+                          className="syntax-subsection__prose arabic-text"
+                          dangerouslySetInnerHTML={{ __html: renderFormattedHtml(subsection.content) }}
                         />
                       )}
 
-                      {sub.codeBlocks.map((cb, idx: number) => (
+                      {subsection.codeBlocks.map((codeBlock, index) => (
                         <CodeBlock
-                          key={idx}
-                          code={cb.code}
-                          language={cb.language || 'python'}
+                          key={`${subsection.id}-${index}`}
+                          code={codeBlock.code}
+                          language={codeBlock.language || 'python'}
+                          title={codeBlock.title}
                         />
                       ))}
-                    </div>
+                    </section>
                   ))}
                 </div>
               </article>

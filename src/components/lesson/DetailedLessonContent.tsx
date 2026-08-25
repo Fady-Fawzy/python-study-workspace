@@ -32,7 +32,7 @@ function ResultBlock({ block }: { block: DetailedContentBlock }) {
       dir="ltr"
     >
       <div className="detailed-result-label">{label}</div>
-      <pre><code>{block.content}</code></pre>
+      <pre dir="ltr"><code dir="ltr">{block.content}</code></pre>
     </section>
   );
 }
@@ -40,7 +40,7 @@ function ResultBlock({ block }: { block: DetailedContentBlock }) {
 function CalloutBlock({ block }: { block: DetailedContentBlock }) {
   return (
     <aside className={`detailed-callout ${block.type}`} role="note" dir="auto">
-      <div className="detailed-callout-label">{block.label}</div>
+      <div className="detailed-callout-label" dir="auto">{block.label}</div>
       <div
         className="detailed-markdown arabic-text"
         dangerouslySetInnerHTML={{ __html: renderMarkdown(block.content) }}
@@ -86,7 +86,9 @@ export const DetailedLessonContent: React.FC<DetailedLessonContentProps> = ({ le
       return (
         <div
           key={block.id}
-          className={`detailed-markdown arabic-text ${block.type === 'rich-text' ? 'detailed-rich-text' : ''}`}
+          className={block.type === 'rich-text'
+            ? 'detailed-markdown arabic-text detailed-rich-text'
+            : 'detailed-markdown arabic-text'}
           dir="auto"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(block.content) }}
         />

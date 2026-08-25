@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { highlightCode } from '../../lib/syntaxHighlight';
 
@@ -10,31 +10,42 @@ interface CodeBlockProps {
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language = 'python', title }) => {
   const [copied, setCopied] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
+  }, []);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (resetTimerRef.current !== null) window.clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        resetTimerRef.current = null;
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy code:', err);
     }
   };
 
   const highlightedHtml = highlightCode(code, language);
+  const displayLabel = title ? `${title} (${language})` : language;
+  const languageName = language.toLowerCase() === 'python' ? 'Python' : language;
 
   return (
-    <div className="code-container" dir="ltr">
+    <section className="code-container" dir="ltr" role="region" aria-label={displayLabel}>
       <div className="code-header">
         <span className="code-header-lang">
-          {title ? `${title} (${language})` : language}
+          {displayLabel}
         </span>
         <div className="code-header-actions">
           <button
             type="button"
             className={`copy-btn ${copied ? 'copied' : ''}`}
             onClick={handleCopy}
-            aria-label={copied ? 'Copied code to clipboard' : 'Copy code to clipboard'}
+            aria-label={copied ? `Copied ${languageName} code` : `Copy ${languageName} code`}
           >
             {copied ? (
               <>
@@ -50,12 +61,16 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language = 'python',
           </button>
         </div>
       </div>
-      <pre className="code-pre">
+      <pre className="code-pre" dir="ltr">
         <code
           className={`language-${language}`}
+          dir="ltr"
           dangerouslySetInnerHTML={{ __html: highlightedHtml }}
         />
       </pre>
-    </div>
+      <span className="visually-hidden" role="status" aria-live="polite">
+        {copied ? 'Code copied to clipboard' : ''}
+      </span>
+    </section>
   );
 };

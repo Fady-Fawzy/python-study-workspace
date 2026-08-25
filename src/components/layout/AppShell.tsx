@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { MobileDrawer } from './MobileDrawer';
@@ -7,6 +7,7 @@ import { BackupModal } from '../backup/BackupModal';
 import { Lesson, SyntaxSection } from '../../types/content';
 import { StudyStateV1 } from '../../types/state';
 import { IndexedItem } from '../../lib/searchIndex';
+import { closeTransientOverlays } from '../../lib/overlayEvents';
 
 interface AppShellProps {
   currentPath: string;
@@ -35,18 +36,33 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeMobileDrawer = useCallback(() => setIsMobileDrawerOpen(false), []);
+  const openSearch = useCallback(() => {
+    closeTransientOverlays();
+    setIsBackupOpen(false);
+    setIsMobileDrawerOpen(false);
+    setIsSearchOpen(true);
+  }, []);
+  const openBackup = useCallback(() => {
+    closeTransientOverlays();
+    setIsSearchOpen(false);
+    setIsMobileDrawerOpen(false);
+    setIsBackupOpen(true);
+  }, []);
 
   // Global keyboard shortcut: Ctrl+K or Cmd+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setIsSearchOpen(prev => !prev);
+        if (isSearchOpen) setIsSearchOpen(false);
+        else openSearch();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isSearchOpen, openSearch]);
 
   const isFullWidthPage = currentPath.startsWith('/reference') || currentPath === '/bookmarks' || currentPath === '/notes';
 
@@ -64,22 +80,26 @@ export const AppShell: React.FC<AppShellProps> = ({
       {/* Mobile Slide-over Drawer */}
       <MobileDrawer
         isOpen={isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
+        onClose={closeMobileDrawer}
         lessons={lessons}
         activeLessonId={activeLessonId}
         state={state}
         currentPath={currentPath}
         onNavigate={onNavigate}
+        onOpenBackup={openBackup}
+        triggerRef={mobileMenuButtonRef}
       />
 
       {/* Main Column */}
       <div className="app-main-wrapper">
         <Header
           currentPath={currentPath}
+          isMobileDrawerOpen={isMobileDrawerOpen}
+          mobileMenuButtonRef={mobileMenuButtonRef}
           onNavigate={onNavigate}
-          onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenSearch={openSearch}
           onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
-          onOpenBackup={() => setIsBackupOpen(true)}
+          onOpenBackup={openBackup}
           state={state}
           onThemeChange={onThemeChange}
         />

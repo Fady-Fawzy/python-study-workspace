@@ -1,0 +1,147 @@
+import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Lesson } from '../types/content';
+import { StudyStateV1 } from '../types/state';
+import { StudyDashboard } from './StudyDashboard';
+
+const lessons: Lesson[] = [
+  {
+    id: '020',
+    number: 20,
+    title: 'Arithmetic Operators With A Deliberately Long Mobile Title',
+    category: 'Operators & Expressions',
+    rawMarkdown: '',
+    parsedSections: [],
+    toc: [],
+    methods: [],
+    quickReviewSectionIds: []
+  },
+  {
+    id: '021',
+    number: 21,
+    title: 'Lists',
+    category: 'Lists & Operations',
+    rawMarkdown: '',
+    parsedSections: [],
+    toc: [],
+    methods: [],
+    quickReviewSectionIds: []
+  },
+  {
+    id: '074',
+    number: 74,
+    title: 'Reduce Function',
+    category: 'Built-In & Functional Tools',
+    rawMarkdown: '',
+    parsedSections: [],
+    toc: [],
+    methods: ['reduce'],
+    quickReviewSectionIds: []
+  }
+];
+
+const baseState: StudyStateV1 = {
+  version: 1,
+  completedLessons: [],
+  bookmarkedLessons: [],
+  bookmarkedSyntax: [],
+  lessonNotes: {},
+  lastOpenedLessonId: null,
+  recentLessonIds: [],
+  theme: 'dark',
+  preferredMode: 'detailed',
+  updatedAt: '2026-08-25T00:00:00.000Z'
+};
+
+function renderDashboard(overrides: Partial<StudyStateV1> = {}) {
+  const onNavigate = vi.fn();
+  render(
+    <StudyDashboard
+      lessons={lessons}
+      syntaxSections={[]}
+      state={{ ...baseState, ...overrides }}
+      onNavigate={onNavigate}
+    />
+  );
+  return onNavigate;
+}
+
+afterEach(cleanup);
+
+describe('study dashboard', () => {
+  it('resumes the saved lesson and falls back to the first available lesson', async () => {
+    const user = userEvent.setup();
+    const onNavigate = renderDashboard({ lastOpenedLessonId: '074' });
+
+    const continueRegion = screen.getByRole('region', { name: /continue studying/i });
+    expect(within(continueRegion).getByText('Reduce Function')).toBeInTheDocument();
+    await user.click(within(continueRegion).getByRole('button', { name: /open lesson 074/i }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/lesson/074');
+
+    cleanup();
+    const fallbackNavigate = renderDashboard({ lastOpenedLessonId: '999' });
+    const fallbackRegion = screen.getByRole('region', { name: /continue studying/i });
+    await user.click(within(fallbackRegion).getByRole('button', { name: /open lesson 020/i }));
+    expect(fallbackNavigate).toHaveBeenLastCalledWith('/lesson/020');
+  });
+
+  it('exposes compact, course-relative progress semantics', () => {
+    renderDashboard({ completedLessons: ['020', '074'] });
+
+    const progress = screen.getByRole('progressbar', { name: /course progress/i });
+    expect(progress).toHaveAttribute('max', '3');
+    expect(progress).toHaveAttribute('value', '2');
+    expect(screen.getByText('2 of 3 lessons completed')).toBeInTheDocument();
+    expect(screen.getByText('67%')).toBeInTheDocument();
+  });
+
+  it('shows a useful recent-lessons empty state', () => {
+    renderDashboard();
+
+    const recentRegion = screen.getByRole('region', { name: /recently studied/i });
+    expect(within(recentRegion).getByText(/lessons you open will appear here/i)).toBeInTheDocument();
+  });
+
+  it('makes recent lessons easy to resume and keeps completion status accessible', async () => {
+    const user = userEvent.setup();
+    const onNavigate = renderDashboard({
+      recentLessonIds: ['074', '021'],
+      completedLessons: ['021']
+    });
+
+    const recentRegion = screen.getByRole('region', { name: /recently studied/i });
+    const completedRow = within(recentRegion).getByRole('button', { name: /lesson 021.*completed/i });
+    expect(completedRow).toBeInTheDocument();
+    await user.click(within(recentRegion).getByRole('button', { name: /lesson 074/i }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/lesson/074');
+  });
+
+  it('supports empty and populated bookmark navigation', async () => {
+    const user = userEvent.setup();
+    const emptyNavigate = renderDashboard();
+    const emptyRegion = screen.getByRole('region', { name: /saved bookmarks/i });
+    expect(within(emptyRegion).getByText(/bookmark a lesson to keep it within reach/i)).toBeInTheDocument();
+    await user.click(within(emptyRegion).getByRole('button', { name: /view all bookmarks/i }));
+    expect(emptyNavigate).toHaveBeenLastCalledWith('/bookmarks');
+
+    cleanup();
+    const populatedNavigate = renderDashboard({ bookmarkedLessons: ['074'] });
+    const populatedRegion = screen.getByRole('region', { name: /saved bookmarks/i });
+    await user.click(within(populatedRegion).getByRole('button', { name: /lesson 074/i }));
+    expect(populatedNavigate).toHaveBeenLastCalledWith('/lesson/074');
+  });
+
+  it('navigates from readable topic discovery rows', async () => {
+    const user = userEvent.setup();
+    const onNavigate = renderDashboard();
+
+    const topicsRegion = screen.getByRole('region', { name: /course topics/i });
+    const longTitleRow = within(topicsRegion).getByRole('button', {
+      name: /lesson 020.*arithmetic operators with a deliberately long mobile title/i
+    });
+    expect(longTitleRow).toHaveClass('dashboard-topic-lesson');
+    await user.click(longTitleRow);
+    expect(onNavigate).toHaveBeenLastCalledWith('/lesson/020');
+  });
+});

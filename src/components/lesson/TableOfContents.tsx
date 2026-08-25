@@ -1,229 +1,224 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { List, X } from 'lucide-react';
 import { TocItem } from '../../types/content';
+import { CLOSE_TRANSIENT_OVERLAYS_EVENT } from '../../lib/overlayEvents';
 
 interface TableOfContentsProps {
   items: TocItem[];
+  variant?: 'mobile' | 'desktop' | 'both';
 }
+
+const focusableSelector = [
+  'button:not([disabled])',
+  'a[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
 
 const containsArabic = (text: string): boolean => /[\u0600-\u06ff]/.test(text);
+const latinTerm = String.raw`[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\([^()\n]*\))?`;
+const latinPhrasePattern = new RegExp(`${latinTerm}(?:[ \t]+${latinTerm})*`, 'g');
 
 function TocLabel({ text }: { text: string }) {
-  const methodHeading = text.match(/^([A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?)\s*([—–-])\s*(.+)$/);
+  if (!containsArabic(text)) return <>{text}</>;
 
-  if (methodHeading && containsArabic(methodHeading[3])) {
-    return (
-      <>
-        <bdi dir="ltr">{methodHeading[1]}</bdi>
-        {' '}{methodHeading[2]}{' '}{methodHeading[3]}
-      </>
-    );
+  const segments: React.ReactNode[] = [];
+  let lastIndex = 0;
+  for (const match of text.matchAll(latinPhrasePattern)) {
+    const matchIndex = match.index;
+    if (matchIndex > lastIndex) segments.push(text.slice(lastIndex, matchIndex));
+    segments.push(<bdi key={`${matchIndex}-${match[0]}`} dir="ltr">{match[0]}</bdi>);
+    lastIndex = matchIndex + match[0].length;
   }
+  if (lastIndex < text.length) segments.push(text.slice(lastIndex));
 
-  return <>{text}</>;
+  return <>{segments}</>;
 }
 
-export const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
-  const [activeId, setActiveId] = useState<string>('');
+export const TableOfContents: React.FC<TableOfContentsProps> = ({
+  items,
+  variant = 'both'
+}) => {
+  const [activeId, setActiveId] = useState(items[0]?.id ?? '');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const showMobile = variant !== 'desktop';
+  const showDesktop = variant !== 'mobile';
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (!items.some(item => item.id === activeId)) {
+      setActiveId(items[0]?.id ?? '');
+    }
+  }, [activeId, items]);
+
+  useEffect(() => {
+    if (items.length === 0 || typeof IntersectionObserver === 'undefined') return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-            break;
-          }
-        }
+      entries => {
+        const visibleHeading = entries.find(entry => entry.isIntersecting);
+        if (visibleHeading) setActiveId(visibleHeading.target.id);
       },
       { rootMargin: '-80px 0px -60% 0px' }
     );
 
-    items.forEach((item) => {
-      const el = document.getElementById(item.id);
-      if (el) observer.observe(el);
+    items.forEach(item => {
+      const heading = document.getElementById(item.id);
+      if (heading) observer.observe(heading);
     });
 
     return () => observer.disconnect();
   }, [items]);
 
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const returnTarget = triggerRef.current;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsMobileOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab' || !sheetRef.current) return;
+      const focusable = Array.from(sheetRef.current.querySelectorAll<HTMLElement>(focusableSelector));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+      returnTarget?.focus({ preventScroll: true });
+    };
+  }, [isMobileOpen]);
+
+  useEffect(() => {
+    const closeForAnotherOverlay = () => setIsMobileOpen(false);
+    window.addEventListener(CLOSE_TRANSIENT_OVERLAYS_EVENT, closeForAnotherOverlay);
+    return () => window.removeEventListener(CLOSE_TRANSIENT_OVERLAYS_EVENT, closeForAnotherOverlay);
+  }, []);
+
   if (items.length <= 1) return null;
 
   const scrollToHeading = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setActiveId(id);
-      setIsMobileOpen(false);
-    }
+    const heading = document.getElementById(id);
+    const reduceMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    heading?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    setActiveId(id);
+    setIsMobileOpen(false);
   };
+
+  const renderItems = (location: 'mobile' | 'desktop') => (
+    <div className={`lesson-toc__items lesson-toc__items--${location}`}>
+      {items.map(item => {
+        const isActive = activeId === item.id;
+        const isArabic = containsArabic(item.text);
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className="lesson-toc__item"
+            data-active={isActive || undefined}
+            data-level={item.level}
+            aria-current={isActive ? 'location' : undefined}
+            aria-label={item.text}
+            onClick={() => scrollToHeading(item.id)}
+            title={location === 'desktop' ? item.text : undefined}
+            dir={isArabic ? 'rtl' : 'ltr'}
+          >
+            <TocLabel text={item.text} />
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <>
-      {/* Mobile Floating Contents Trigger */}
-      <div className="mobile-toc-trigger">
-        <button
-          type="button"
-          onClick={() => setIsMobileOpen(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: 'var(--bg-surface-raised)',
-            border: '1px solid var(--border-default)',
-            boxShadow: 'var(--shadow-sm)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 500,
-            color: 'var(--text-secondary)'
-          }}
-        >
-          <List size={14} />
-          <span>Contents ({items.length})</span>
-        </button>
-      </div>
+      {showMobile && (
+        <div className="mobile-toc-trigger">
+          <button
+            ref={triggerRef}
+            type="button"
+            className="mobile-toc-trigger__button"
+            aria-label={`Open lesson contents, ${items.length} sections`}
+            aria-haspopup="dialog"
+            aria-expanded={isMobileOpen}
+            aria-controls="mobile-lesson-contents"
+            onClick={() => setIsMobileOpen(true)}
+          >
+            <List size={18} aria-hidden="true" />
+            <span>Lesson contents</span>
+            <span className="mobile-toc-trigger__count">{items.length}</span>
+          </button>
+        </div>
+      )}
 
-      {/* Mobile Contents Bottom Modal */}
-      {isMobileOpen && (
+      {showMobile && isMobileOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            zIndex: 160,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center'
+          className="lesson-toc-backdrop"
+          data-testid="mobile-toc-backdrop"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setIsMobileOpen(false);
           }}
-          onClick={() => setIsMobileOpen(false)}
         >
           <div
-            style={{
-              width: '100%',
-              maxWidth: '500px',
-              backgroundColor: 'var(--bg-surface)',
-              borderTopLeftRadius: 'var(--radius-xl)',
-              borderTopRightRadius: 'var(--radius-xl)',
-              padding: 'var(--space-5)',
-              maxHeight: '70vh',
-              overflowY: 'auto',
-              borderTop: '1px solid var(--border-default)',
-              boxShadow: 'var(--shadow-lg)'
-            }}
-            onClick={(e) => e.stopPropagation()}
+            ref={sheetRef}
+            id="mobile-lesson-contents"
+            className="lesson-toc-sheet ui-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-lesson-contents-title"
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 'var(--space-4)',
-                borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: 'var(--space-2)'
-              }}
-            >
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Lesson Contents</h3>
-              <button type="button" onClick={() => setIsMobileOpen(false)} style={{ color: 'var(--text-muted)' }}>
-                <X size={18} />
+            <div className="lesson-toc-sheet__header">
+              <div>
+                <h2 id="mobile-lesson-contents-title">Lesson contents</h2>
+                <p>{items.length} sections</p>
+              </div>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                className="ui-icon-button"
+                aria-label="Close lesson contents"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <X size={20} aria-hidden="true" />
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              {items.map((item) => {
-                const isArabic = containsArabic(item.text);
-                return (
-                  <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => scrollToHeading(item.id)}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: isArabic ? 'right' : 'left',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: activeId === item.id ? 'var(--accent-primary-muted)' : 'transparent',
-                    color: activeId === item.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                    fontSize: 'var(--text-sm)',
-                    fontWeight: activeId === item.id ? 600 : 400
-                  }}
-                  dir={isArabic ? 'rtl' : 'ltr'}
-                >
-                  <TocLabel text={item.text} />
-                </button>
-                );
-              })}
-            </div>
+            <nav className="lesson-toc-sheet__body" aria-label="Lesson sections">
+              {renderItems('mobile')}
+            </nav>
           </div>
         </div>
       )}
 
-      {/* Desktop Sticky Sidebar TOC */}
-      <nav className="desktop-toc-container">
-        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
-          On this page
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {items.map((item) => {
-            const isActive = activeId === item.id;
-            const isArabic = containsArabic(item.text);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => scrollToHeading(item.id)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: isArabic ? 'right' : 'left',
-                  padding: `4px 8px 4px ${item.level > 2 ? '16px' : '8px'}`,
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-xs)',
-                  color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-                  backgroundColor: isActive ? 'var(--accent-primary-muted)' : 'transparent',
-                  fontWeight: isActive ? 600 : 400,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  transition: 'all var(--transition-fast)'
-                }}
-                title={item.text}
-                dir={isArabic ? 'rtl' : 'ltr'}
-              >
-                <TocLabel text={item.text} />
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      <style>{`
-        .desktop-toc-container {
-          position: sticky;
-          top: 80px;
-          max-height: calc(100vh - 100px);
-          overflow-y: auto;
-          width: var(--toc-width);
-          flex-shrink: 0;
-          padding-left: var(--space-4);
-          border-left: 1px solid var(--border-subtle);
-        }
-        .mobile-toc-trigger {
-          display: none;
-          margin-bottom: var(--space-4);
-        }
-        @media (max-width: 1200px) {
-          .desktop-toc-container {
-            display: none;
-          }
-          .mobile-toc-trigger {
-            display: block;
-          }
-        }
-      `}</style>
+      {showDesktop && (
+        <nav className="desktop-toc-container" aria-label="On this page">
+          <div className="desktop-toc__title">On this page</div>
+          {renderItems('desktop')}
+        </nav>
+      )}
     </>
   );
 };

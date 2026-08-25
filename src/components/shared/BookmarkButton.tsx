@@ -20,19 +20,8 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
       className={`bookmark-btn ${isBookmarked ? 'active' : ''}`}
       onClick={onToggle}
       title={isBookmarked ? 'Remove bookmark' : title}
-      aria-label={isBookmarked ? 'Bookmarked' : 'Add bookmark'}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '36px',
-        height: '36px',
-        borderRadius: 'var(--radius-md)',
-        border: `1px solid ${isBookmarked ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
-        backgroundColor: isBookmarked ? 'var(--accent-gold-muted)' : 'var(--bg-surface-raised)',
-        color: isBookmarked ? 'var(--accent-gold)' : 'var(--text-muted)',
-        transition: 'all var(--transition-fast)'
-      }}
+      aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+      aria-pressed={isBookmarked}
     >
       <Bookmark
         size={size}

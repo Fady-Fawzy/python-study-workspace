@@ -81,4 +81,50 @@ describe('Backup & Restore System', () => {
     expect(result.state?.lessonNotes).toEqual({});
     expect(result.state?.theme).toBe('system');
   });
+
+  it('sanitizes malformed note values and typed collections during restore', () => {
+    const result = importBackup(JSON.stringify({
+      completedLessons: ['020', 21, '020'],
+      bookmarkedLessons: ['021', false],
+      bookmarkedSyntax: [4, '5', 4],
+      recentLessonIds: ['020', null, '021'],
+      lessonNotes: {
+        '020': 'safe',
+        '021': ['unsafe'],
+        '022': null,
+        '023': 1
+      }
+    }));
+
+    expect(result.success).toBe(true);
+    expect(result.state).toEqual(expect.objectContaining({
+      completedLessons: ['020'],
+      bookmarkedLessons: ['021'],
+      bookmarkedSyntax: [4],
+      recentLessonIds: ['020', '021'],
+      lessonNotes: { '020': 'safe' }
+    }));
+    expect(() => Object.values(result.state!.lessonNotes).filter(note => note.trim())).not.toThrow();
+  });
+
+  it.each([null, [], 'notes', 42])('replaces non-record lessonNotes backup value %p with an empty record', (lessonNotes) => {
+    const result = importBackup(JSON.stringify({ lessonNotes }));
+    expect(result.success).toBe(true);
+    expect(result.state?.lessonNotes).toEqual({});
+  });
+
+  it.each([
+    ['bare array', []],
+    ['array wrapper state', { state: [] }],
+    ['null wrapper state', { state: null }],
+    ['primitive wrapper state', { state: 'invalid' }]
+  ])('rejects %s without replacing existing persisted study data', (_label, payload) => {
+    const existing = JSON.stringify({ completedLessons: ['074'], lessonNotes: { '074': 'keep me' } });
+    localStorage.setItem('py_study_workspace_state_v1', existing);
+
+    const result = importBackup(JSON.stringify(payload));
+
+    expect(result).toEqual({ success: false, error: 'Invalid backup format' });
+    expect(localStorage.getItem('py_study_workspace_state_v1')).toBe(existing);
+  });
 });

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Check, BookOpen, Zap } from 'lucide-react';
+import React, { KeyboardEvent } from 'react';
+import { BookOpen, Check, Zap } from 'lucide-react';
 import { BookmarkButton } from '../shared/BookmarkButton';
 
 interface LessonHeaderProps {
@@ -14,6 +14,8 @@ interface LessonHeaderProps {
   onModeChange: (mode: 'detailed' | 'quickReview') => void;
 }
 
+const modes = ['detailed', 'quickReview'] as const;
+
 export const LessonHeader: React.FC<LessonHeaderProps> = ({
   lessonId,
   title,
@@ -25,147 +27,94 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
   onToggleBookmark,
   onModeChange
 }) => {
+  const selectMode = (mode: typeof modes[number]) => {
+    onModeChange(mode);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`lesson-${lessonId}-${mode}-tab`)?.focus();
+    });
+  };
+
+  const handleModeKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    mode: typeof modes[number]
+  ) => {
+    const currentIndex = modes.indexOf(mode);
+    let nextIndex: number | null = null;
+
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % modes.length;
+    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + modes.length) % modes.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = modes.length - 1;
+
+    if (nextIndex !== null) {
+      event.preventDefault();
+      selectMode(modes[nextIndex]);
+    }
+  };
+
   return (
-    <div
-      style={{
-        paddingBottom: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-        borderBottom: '1px solid var(--border-subtle)',
-        width: '100%'
-      }}
-    >
-      {/* Top category & action buttons */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 'var(--space-3)',
-          flexWrap: 'wrap',
-          gap: 'var(--space-2)',
-          width: '100%'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-          <span
-            style={{
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--accent-primary-muted)',
-              color: 'var(--accent-primary)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 600
-            }}
-          >
-            Lesson {lessonId}
-          </span>
-          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-            {category}
-          </span>
+    <header className="lesson-header">
+      <div className="lesson-header__topline">
+        <div className="lesson-header__meta">
+          <span className="lesson-header__number" dir="ltr">Lesson {lessonId}</span>
+          <span className="lesson-header__category" dir="auto">{category}</span>
         </div>
 
-        {/* Actions: Bookmark & Complete */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <div className="lesson-header__actions" aria-label="Lesson actions">
           <BookmarkButton
             isBookmarked={isBookmarked}
             onToggle={onToggleBookmark}
             title="Bookmark this lesson"
           />
-
           <button
             type="button"
+            className="lesson-complete-button"
+            data-completed={isCompleted || undefined}
             onClick={onToggleComplete}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '6px 10px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 600,
-              backgroundColor: isCompleted ? 'var(--accent-success-muted)' : 'var(--bg-surface-raised)',
-              color: isCompleted ? 'var(--accent-success)' : 'var(--text-secondary)',
-              border: `1px solid ${isCompleted ? 'var(--accent-success)' : 'var(--border-subtle)'}`,
-              transition: 'all var(--transition-fast)',
-              minHeight: '36px'
-            }}
+            aria-pressed={isCompleted}
+            aria-label={isCompleted ? 'Lesson completed; mark incomplete' : 'Mark lesson complete'}
           >
-            <Check size={14} strokeWidth={isCompleted ? 3 : 2} />
-            <span>{isCompleted ? 'Completed ✓' : 'Mark Complete'}</span>
+            <Check size={16} strokeWidth={isCompleted ? 3 : 2} aria-hidden="true" />
+            <span>{isCompleted ? 'Completed' : 'Mark Complete'}</span>
           </button>
         </div>
       </div>
 
-      {/* Main Title */}
-      <h1
-        style={{
-          fontSize: 'clamp(1.2rem, 4vw, 1.75rem)',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.02em',
-          marginBottom: 'var(--space-4)',
-          wordBreak: 'break-word'
-        }}
-      >
-        {title}
-      </h1>
+      <h1 className="lesson-header__title" dir="auto">{title}</h1>
 
-      {/* Mode Switcher: Detailed vs Quick Review */}
-      <div
-        style={{
-          display: 'inline-flex',
-          padding: '3px',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--bg-surface-raised)',
-          border: '1px solid var(--border-subtle)',
-          maxWidth: '100%',
-          flexWrap: 'wrap',
-          gap: '2px'
-        }}
-      >
+      <div className="lesson-mode-switch" role="tablist" aria-label="Study mode">
         <button
+          id={`lesson-${lessonId}-detailed-tab`}
           type="button"
+          role="tab"
+          className="lesson-mode-switch__tab"
+          data-selected={activeMode === 'detailed' || undefined}
+          aria-selected={activeMode === 'detailed'}
+          aria-controls={`lesson-${lessonId}-mode-panel`}
+          tabIndex={activeMode === 'detailed' ? 0 : -1}
           onClick={() => onModeChange('detailed')}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: activeMode === 'detailed' ? 600 : 500,
-            backgroundColor: activeMode === 'detailed' ? 'var(--bg-surface)' : 'transparent',
-            color: activeMode === 'detailed' ? 'var(--text-primary)' : 'var(--text-muted)',
-            boxShadow: activeMode === 'detailed' ? 'var(--shadow-sm)' : 'none',
-            transition: 'all var(--transition-fast)'
-          }}
+          onKeyDown={(event) => handleModeKeyDown(event, 'detailed')}
         >
-          <BookOpen size={14} />
+          <BookOpen size={17} aria-hidden="true" />
           <span>Detailed Study</span>
         </button>
 
         <button
+          id={`lesson-${lessonId}-quickReview-tab`}
           type="button"
+          role="tab"
+          className="lesson-mode-switch__tab lesson-mode-switch__tab--quick"
+          data-selected={activeMode === 'quickReview' || undefined}
+          aria-selected={activeMode === 'quickReview'}
+          aria-controls={`lesson-${lessonId}-mode-panel`}
+          tabIndex={activeMode === 'quickReview' ? 0 : -1}
           onClick={() => onModeChange('quickReview')}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '6px 12px',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: activeMode === 'quickReview' ? 600 : 500,
-            backgroundColor: activeMode === 'quickReview' ? 'var(--bg-surface)' : 'transparent',
-            color: activeMode === 'quickReview' ? 'var(--accent-gold)' : 'var(--text-muted)',
-            boxShadow: activeMode === 'quickReview' ? 'var(--shadow-sm)' : 'none',
-            transition: 'all var(--transition-fast)'
-          }}
+          onKeyDown={(event) => handleModeKeyDown(event, 'quickReview')}
         >
-          <Zap size={14} />
+          <Zap size={17} aria-hidden="true" />
           <span>Quick Review</span>
         </button>
       </div>
-    </div>
+    </header>
   );
 };

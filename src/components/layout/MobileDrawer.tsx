@@ -1,5 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { X, BookOpen, Code2, Bookmark, FileText, Check, Search, ChevronRight, ChevronDown } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  X, BookOpen, Code2, Bookmark, FileText, Check, Search,
+  ChevronRight, ChevronDown, Shield
+} from 'lucide-react';
 import { Lesson } from '../../types/content';
 import { LESSON_CATEGORIES } from '../../lib/lessonMapping';
 import { StudyStateV1 } from '../../types/state';
@@ -12,7 +15,23 @@ interface MobileDrawerProps {
   state: StudyStateV1;
   currentPath: string;
   onNavigate: (path: string) => void;
+  onOpenBackup: () => void;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
+
+const focusableSelector = [
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'a[href]',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
+
+const isNavActive = (currentPath: string, path: string) => {
+  if (path === '/') return currentPath === '/' || currentPath.startsWith('/lesson');
+  return currentPath.startsWith(path);
+};
 
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   isOpen,
@@ -21,338 +40,243 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   activeLessonId,
   state,
   currentPath,
-  onNavigate
+  onNavigate,
+  onOpenBackup,
+  triggerRef
 }) => {
   const [filterText, setFilterText] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const activeLessonRowRef = useRef<HTMLButtonElement>(null);
+  const activeLesson = lessons.find(lesson => lesson.id === activeLessonId);
+  const activeCategoryName = activeLesson
+    ? LESSON_CATEGORIES.find(category => (
+      activeLesson.number >= category.range[0] && activeLesson.number <= category.range[1]
+    ))?.name
+    : undefined;
+  const isActiveCategoryCollapsed = activeCategoryName
+    ? Boolean(collapsedCategories[activeCategoryName])
+    : false;
 
-  // Body scroll lock on open
   useEffect(() => {
-    if (isOpen) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
 
-  // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+    const originalOverflow = document.body.style.overflow;
+    const returnTarget = triggerRef.current ?? document.activeElement as HTMLElement | null;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
         onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(focusableSelector));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
 
-  const toggleCategory = (catName: string) => {
-    setCollapsedCategories(prev => ({
-      ...prev,
-      [catName]: !prev[catName]
-    }));
-  };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+      returnTarget?.focus();
+    };
+  }, [isOpen, onClose, triggerRef]);
+
+  useEffect(() => {
+    if (!isOpen || !activeCategoryName) return;
+    setCollapsedCategories(previous => previous[activeCategoryName]
+      ? { ...previous, [activeCategoryName]: false }
+      : previous);
+  }, [isOpen, activeLessonId, activeCategoryName]);
+
+  useEffect(() => {
+    const activeRow = activeLessonRowRef.current;
+    if (isOpen && typeof activeRow?.scrollIntoView === 'function') {
+      activeRow.scrollIntoView({ block: 'nearest' });
+    }
+  }, [isOpen, activeLessonId, isActiveCategoryCollapsed]);
 
   const navLinks = [
     { label: 'Study Home', path: '/', icon: BookOpen },
     { label: 'Syntax Reference', path: '/reference', icon: Code2 },
     { label: 'Bookmarks', path: '/bookmarks', icon: Bookmark, count: state.bookmarkedLessons.length + state.bookmarkedSyntax.length },
-    { label: 'Personal Notes', path: '/notes', icon: FileText, count: Object.keys(state.lessonNotes).filter(k => state.lessonNotes[k].trim()).length }
+    { label: 'Personal Notes', path: '/notes', icon: FileText, count: Object.values(state.lessonNotes).filter(note => note.trim()).length }
   ];
 
   const groupedLessons = useMemo(() => {
     const query = filterText.trim().toLowerCase();
-
-    return LESSON_CATEGORIES.map(cat => {
-      const catLessons = lessons.filter(l => {
-        const inRange = l.number >= cat.range[0] && l.number <= cat.range[1];
-        if (!inRange) return false;
-        if (!query) return true;
-
-        return (
-          l.id.includes(query) ||
-          l.number.toString().includes(query) ||
-          l.title.toLowerCase().includes(query) ||
-          l.methods.some(m => m.toLowerCase().includes(query))
-        );
-      });
-
-      return {
-        ...cat,
-        lessons: catLessons
-      };
-    }).filter(cat => cat.lessons.length > 0);
+    return LESSON_CATEGORIES.map(category => ({
+      ...category,
+      lessons: lessons.filter(lesson => {
+        const inRange = lesson.number >= category.range[0] && lesson.number <= category.range[1];
+        if (!inRange || !query) return inRange;
+        return lesson.id.includes(query)
+          || lesson.number.toString().includes(query)
+          || lesson.title.toLowerCase().includes(query)
+          || lesson.methods.some(method => method.toLowerCase().includes(query));
+      })
+    })).filter(category => category.lessons.length > 0);
   }, [lessons, filterText]);
 
   if (!isOpen) return null;
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        backdropFilter: 'blur(6px)',
-        zIndex: 200,
-        display: 'flex'
+      className="mobile-drawer-backdrop"
+      data-testid="mobile-drawer-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
       }}
-      onClick={onClose}
     >
       <div
-        style={{
-          width: 'min(85vw, 340px)',
-          height: '100%',
-          backgroundColor: 'var(--bg-surface)',
-          borderRight: '1px solid var(--border-default)',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: 'var(--shadow-lg)',
-          paddingBottom: 'calc(var(--space-6) + env(safe-area-inset-bottom, 0px))'
-        }}
-        onClick={(e) => e.stopPropagation()}
+        ref={panelRef}
+        id="mobile-navigation-drawer"
+        className="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-navigation-title"
       >
-        {/* Top bar */}
-        <div
-          style={{
-            height: 'var(--header-height)',
-            padding: '0 var(--space-4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: '1px solid var(--border-subtle)',
-            backgroundColor: 'var(--bg-surface-raised)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '24px',
-                height: '24px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--accent-primary)',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '11px',
-                fontFamily: 'var(--font-mono)'
-              }}
-            >
-              PY
-            </span>
-            <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>
-              Python Navigation
-            </span>
+        <div className="mobile-drawer__header">
+          <div className="mobile-drawer__title-wrap">
+            <span className="app-brand__mark" aria-hidden="true">PY</span>
+            <h2 id="mobile-navigation-title" className="mobile-drawer__title">Python Navigation</h2>
           </div>
-
           <button
+            ref={closeButtonRef}
             type="button"
+            className="ui-icon-button mobile-drawer__close"
             onClick={onClose}
             aria-label="Close navigation drawer"
-            style={{
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-muted)'
-            }}
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Primary Page Navigation Links */}
-        <div style={{ padding: 'var(--space-3) var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {navLinks.map(link => {
-              const active = currentPath === link.path || (link.path === '/' && currentPath === '/');
-              const Icon = link.icon;
-              return (
-                <button
-                  key={link.path}
-                  type="button"
-                  onClick={() => {
-                    onNavigate(link.path);
-                    onClose();
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    minHeight: '44px',
-                    padding: '0 var(--space-3)',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: active ? 'var(--accent-primary-muted)' : 'transparent',
-                    color: active ? 'var(--accent-primary)' : 'var(--text-primary)',
-                    fontWeight: active ? 600 : 500,
-                    fontSize: 'var(--text-sm)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                    <Icon size={16} />
-                    <span>{link.label}</span>
-                  </div>
-                  {typeof link.count === 'number' && link.count > 0 && (
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        padding: '1px 6px',
-                        borderRadius: 'var(--radius-full)',
-                        backgroundColor: 'var(--bg-surface-raised)',
-                        color: 'var(--text-muted)'
-                      }}
-                    >
-                      {link.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        <nav className="mobile-drawer__primary" aria-label="Mobile primary navigation">
+          {navLinks.map(link => {
+            const active = isNavActive(currentPath, link.path);
+            const Icon = link.icon;
+            return (
+              <button
+                key={link.path}
+                type="button"
+                className="mobile-drawer__nav-row"
+                data-active={active || undefined}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => {
+                  onNavigate(link.path);
+                  onClose();
+                }}
+              >
+                <span className="mobile-drawer__row-label">
+                  <Icon size={18} aria-hidden="true" />
+                  <span>{link.label}</span>
+                </span>
+                {typeof link.count === 'number' && link.count > 0 && (
+                  <span className="navigation-count">{link.count}</span>
+                )}
+              </button>
+            );
+          })}
+          <button type="button" className="mobile-drawer__nav-row" onClick={onOpenBackup}>
+            <span className="mobile-drawer__row-label">
+              <Shield size={18} aria-hidden="true" />
+              <span>Backup &amp; Restore</span>
+            </span>
+          </button>
+        </nav>
+
+        <div className="mobile-drawer__filter">
+          <Search size={17} aria-hidden="true" />
+          <label className="visually-hidden" htmlFor="mobile-lesson-filter">Search lessons</label>
+          <input
+            id="mobile-lesson-filter"
+            type="search"
+            value={filterText}
+            onChange={(event) => setFilterText(event.target.value)}
+            placeholder="Search 55 lessons…"
+          />
         </div>
 
-        {/* Lesson Filter */}
-        <div style={{ padding: 'var(--space-3) var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              padding: '8px 12px',
-              backgroundColor: 'var(--bg-surface-raised)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            <Search size={15} color="var(--text-muted)" />
-            <input
-              type="text"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Search 55 lessons..."
-              style={{
-                flex: 1,
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: 'var(--text-sm)',
-                color: 'var(--text-primary)'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Grouped Lessons Scroll Area */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-2) var(--space-2)' }}>
-          {groupedLessons.map(cat => {
-            const isCollapsed = !filterText && collapsedCategories[cat.name];
-            const completedInCat = cat.lessons.filter(l => state.completedLessons.includes(l.id)).length;
+        <div className="mobile-drawer__lessons" aria-label="Lessons">
+          {filterText.trim() && groupedLessons.length === 0 && (
+            <p className="lesson-nav-empty" role="status">
+              No lessons match <bdi>&ldquo;{filterText.trim()}&rdquo;</bdi>.
+            </p>
+          )}
+          {groupedLessons.map(category => {
+            const isCollapsed = !filterText && collapsedCategories[category.name];
+            const completedCount = category.lessons.filter(lesson => state.completedLessons.includes(lesson.id)).length;
+            const regionId = `mobile-category-${category.range[0]}`;
 
             return (
-              <div key={cat.name} style={{ marginBottom: 'var(--space-2)' }}>
+              <section className="lesson-nav-group" key={category.name}>
                 <button
                   type="button"
-                  onClick={() => toggleCategory(cat.name)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    minHeight: '40px',
-                    padding: '0 var(--space-2)',
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    color: 'var(--text-muted)',
-                    textAlign: 'left'
-                  }}
+                  className="lesson-nav-category"
+                  onClick={() => setCollapsedCategories(previous => ({
+                    ...previous,
+                    [category.name]: !previous[category.name]
+                  }))}
+                  aria-expanded={!isCollapsed}
+                  aria-controls={regionId}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                    {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                    <span>{cat.name}</span>
-                  </div>
-                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-                    {completedInCat}/{cat.lessons.length}
+                  <span className="lesson-nav-category__label">
+                    {isCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+                    <span>{category.name}</span>
                   </span>
+                  <span className="lesson-nav-category__progress">{completedCount}/{category.lessons.length}</span>
                 </button>
 
                 {!isCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {cat.lessons.map(lesson => {
-                      const isActive = activeLessonId === lesson.id;
-                      const isCompleted = state.completedLessons.includes(lesson.id);
-                      const isBookmarked = state.bookmarkedLessons.includes(lesson.id);
-
+                  <div id={regionId} className="lesson-nav-list">
+                    {category.lessons.map(lesson => {
+                      const active = activeLessonId === lesson.id;
+                      const completed = state.completedLessons.includes(lesson.id);
+                      const bookmarked = state.bookmarkedLessons.includes(lesson.id);
                       return (
                         <button
                           key={lesson.id}
+                          ref={active ? activeLessonRowRef : undefined}
                           type="button"
+                          className="lesson-nav-row lesson-nav-row--mobile"
+                          data-active={active || undefined}
+                          aria-current={active ? 'page' : undefined}
+                          aria-label={`Lesson ${lesson.id}: ${lesson.title}${completed ? ', completed' : ''}${bookmarked ? ', bookmarked' : ''}`}
                           onClick={() => {
                             onNavigate(`/lesson/${lesson.id}`);
                             onClose();
                           }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            minHeight: '44px',
-                            padding: '0 var(--space-3)',
-                            borderRadius: 'var(--radius-md)',
-                            backgroundColor: isActive ? 'var(--accent-primary-muted)' : 'transparent',
-                            color: isActive ? 'var(--accent-primary)' : 'var(--text-primary)',
-                            fontSize: 'var(--text-sm)',
-                            textAlign: 'left',
-                            fontWeight: isActive ? 600 : 400
-                          }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-                            <span
-                              style={{
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '11px',
-                                color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)'
-                              }}
-                            >
-                              {lesson.id}
-                            </span>
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {lesson.title}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                            {isBookmarked && (
-                              <Bookmark size={14} color="var(--accent-gold)" fill="var(--accent-gold)" />
-                            )}
-                            {isCompleted && (
-                              <div
-                                style={{
-                                  width: '18px',
-                                  height: '18px',
-                                  borderRadius: 'var(--radius-full)',
-                                  backgroundColor: 'var(--accent-success-muted)',
-                                  color: 'var(--accent-success)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <Check size={12} strokeWidth={3} />
-                              </div>
-                            )}
-                          </div>
+                          <span className="lesson-nav-row__content">
+                            <span className="lesson-nav-row__number">{lesson.id}</span>
+                            <span className="lesson-nav-row__title">{lesson.title}</span>
+                          </span>
+                          <span className="lesson-nav-row__status" aria-hidden="true">
+                            {bookmarked && <Bookmark size={14} className="lesson-nav-bookmark" fill="currentColor" />}
+                            {completed && <span className="lesson-nav-complete"><Check size={12} strokeWidth={3} /></span>}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                 )}
-              </div>
+              </section>
             );
           })}
         </div>

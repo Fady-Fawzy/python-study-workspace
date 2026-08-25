@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Bookmark, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { Lesson } from '../../types/content';
 import { LESSON_CATEGORIES } from '../../lib/lessonMapping';
@@ -20,203 +20,126 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [filterText, setFilterText] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const activeLessonRowRef = useRef<HTMLButtonElement>(null);
+  const activeLesson = lessons.find(lesson => lesson.id === activeLessonId);
+  const activeCategoryName = activeLesson
+    ? LESSON_CATEGORIES.find(category => (
+      activeLesson.number >= category.range[0] && activeLesson.number <= category.range[1]
+    ))?.name
+    : undefined;
+  const isActiveCategoryCollapsed = activeCategoryName
+    ? Boolean(collapsedCategories[activeCategoryName])
+    : false;
 
-  const toggleCategory = (catName: string) => {
-    setCollapsedCategories(prev => ({
-      ...prev,
-      [catName]: !prev[catName]
-    }));
-  };
+  useEffect(() => {
+    if (!activeCategoryName) return;
+    setCollapsedCategories(previous => previous[activeCategoryName]
+      ? { ...previous, [activeCategoryName]: false }
+      : previous);
+  }, [activeCategoryName, activeLessonId]);
 
-  // Group lessons by topic category
+  useEffect(() => {
+    const activeRow = activeLessonRowRef.current;
+    if (typeof activeRow?.scrollIntoView === 'function') {
+      activeRow.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeLessonId, isActiveCategoryCollapsed]);
+
   const groupedLessons = useMemo(() => {
     const query = filterText.trim().toLowerCase();
-
-    return LESSON_CATEGORIES.map(cat => {
-      const catLessons = lessons.filter(l => {
-        const inRange = l.number >= cat.range[0] && l.number <= cat.range[1];
-        if (!inRange) return false;
-        if (!query) return true;
-
-        return (
-          l.id.includes(query) ||
-          l.number.toString().includes(query) ||
-          l.title.toLowerCase().includes(query) ||
-          l.methods.some(m => m.toLowerCase().includes(query))
-        );
-      });
-
-      return {
-        ...cat,
-        lessons: catLessons
-      };
-    }).filter(cat => cat.lessons.length > 0);
+    return LESSON_CATEGORIES.map(category => ({
+      ...category,
+      lessons: lessons.filter(lesson => {
+        const inRange = lesson.number >= category.range[0] && lesson.number <= category.range[1];
+        if (!inRange || !query) return inRange;
+        return lesson.id.includes(query)
+          || lesson.number.toString().includes(query)
+          || lesson.title.toLowerCase().includes(query)
+          || lesson.methods.some(method => method.toLowerCase().includes(query));
+      })
+    })).filter(category => category.lessons.length > 0);
   }, [lessons, filterText]);
 
   return (
-    <aside className="app-sidebar-container">
-      {/* Sidebar Header & Filter */}
-      <div
-        style={{
-          padding: 'var(--space-3) var(--space-4)',
-          borderBottom: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-surface)'
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            padding: '6px 10px',
-            backgroundColor: 'var(--bg-surface-raised)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-subtle)'
-          }}
-        >
-          <Search size={14} color="var(--text-muted)" />
-          <input
-            type="text"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Filter lessons..."
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontSize: 'var(--text-xs)',
-              color: 'var(--text-primary)'
-            }}
-          />
-        </div>
+    <aside className="app-sidebar-container" aria-label="Lesson navigation">
+      <div className="sidebar-filter">
+        <Search size={15} aria-hidden="true" />
+        <label className="visually-hidden" htmlFor="sidebar-lesson-filter">Filter lessons</label>
+        <input
+          id="sidebar-lesson-filter"
+          type="search"
+          value={filterText}
+          onChange={(event) => setFilterText(event.target.value)}
+          placeholder="Filter lessons…"
+        />
       </div>
 
-      {/* Lesson List Container */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 'var(--space-2) var(--space-2) var(--space-8)'
-        }}
-      >
-        {groupedLessons.map(cat => {
-          const isCollapsed = !filterText && collapsedCategories[cat.name];
-          const completedInCat = cat.lessons.filter(l => completedLessonIds.includes(l.id)).length;
+      <div className="sidebar-lessons">
+        {filterText.trim() && groupedLessons.length === 0 && (
+          <p className="lesson-nav-empty" role="status">
+            No lessons match <bdi>&ldquo;{filterText.trim()}&rdquo;</bdi>.
+          </p>
+        )}
+        {groupedLessons.map(category => {
+          const isCollapsed = !filterText && collapsedCategories[category.name];
+          const completedCount = category.lessons.filter(lesson => completedLessonIds.includes(lesson.id)).length;
+          const regionId = `sidebar-category-${category.range[0]}`;
 
           return (
-            <div key={cat.name} style={{ marginBottom: 'var(--space-2)' }}>
-              {/* Category Header */}
+            <section className="lesson-nav-group" key={category.name}>
               <button
                 type="button"
-                onClick={() => toggleCategory(cat.name)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '6px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  color: 'var(--text-muted)',
-                  textAlign: 'left',
-                  transition: 'background var(--transition-fast)'
-                }}
+                className="lesson-nav-category lesson-nav-category--desktop"
+                onClick={() => setCollapsedCategories(previous => ({
+                  ...previous,
+                  [category.name]: !previous[category.name]
+                }))}
+                aria-expanded={!isCollapsed}
+                aria-controls={regionId}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', minWidth: 0 }}>
-                  {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {cat.name}
-                  </span>
-                </div>
+                <span className="lesson-nav-category__label">
+                  {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                  <span>{category.name}</span>
+                </span>
                 <span
-                  style={{
-                    fontSize: '10px',
-                    fontFamily: 'var(--font-mono)',
-                    color: completedInCat === cat.lessons.length ? 'var(--accent-success)' : 'var(--text-muted)',
-                    marginLeft: '4px',
-                    flexShrink: 0
-                  }}
+                  className="lesson-nav-category__progress"
+                  data-complete={completedCount === category.lessons.length || undefined}
                 >
-                  {completedInCat}/{cat.lessons.length}
+                  {completedCount}/{category.lessons.length}
                 </span>
               </button>
 
-              {/* Category Lessons */}
               {!isCollapsed && (
-                <div style={{ marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                  {cat.lessons.map(lesson => {
-                    const isActive = activeLessonId === lesson.id;
-                    const isCompleted = completedLessonIds.includes(lesson.id);
-                    const isBookmarked = bookmarkedLessonIds.includes(lesson.id);
-
+                <div id={regionId} className="lesson-nav-list">
+                  {category.lessons.map(lesson => {
+                    const active = activeLessonId === lesson.id;
+                    const completed = completedLessonIds.includes(lesson.id);
+                    const bookmarked = bookmarkedLessonIds.includes(lesson.id);
                     return (
                       <button
                         key={lesson.id}
+                        ref={active ? activeLessonRowRef : undefined}
                         type="button"
+                        className="lesson-nav-row"
+                        data-active={active || undefined}
+                        aria-current={active ? 'page' : undefined}
+                        aria-label={`Lesson ${lesson.id}: ${lesson.title}${completed ? ', completed' : ''}${bookmarked ? ', bookmarked' : ''}`}
                         onClick={() => onSelectLesson(lesson.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                          padding: '6px 8px 6px 12px',
-                          borderRadius: 'var(--radius-md)',
-                          fontSize: 'var(--text-xs)',
-                          textAlign: 'left',
-                          backgroundColor: isActive ? 'var(--accent-primary-muted)' : 'transparent',
-                          color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                          borderLeft: isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                          fontWeight: isActive ? 600 : 400,
-                          transition: 'all var(--transition-fast)'
-                        }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', minWidth: 0 }}>
-                          <span
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '11px',
-                              color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-                              flexShrink: 0
-                            }}
-                          >
-                            {lesson.id}
-                          </span>
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {lesson.title}
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0, marginLeft: '6px' }}>
-                          {isBookmarked && (
-                            <Bookmark size={12} color="var(--accent-gold)" fill="var(--accent-gold)" />
-                          )}
-                          {isCompleted && (
-                            <div
-                              style={{
-                                width: '14px',
-                                height: '14px',
-                                borderRadius: 'var(--radius-full)',
-                                backgroundColor: 'var(--accent-success-muted)',
-                                color: 'var(--accent-success)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              <Check size={10} strokeWidth={3} />
-                            </div>
-                          )}
-                        </div>
+                        <span className="lesson-nav-row__content">
+                          <span className="lesson-nav-row__number">{lesson.id}</span>
+                          <span className="lesson-nav-row__title">{lesson.title}</span>
+                        </span>
+                        <span className="lesson-nav-row__status" aria-hidden="true">
+                          {bookmarked && <Bookmark size={13} className="lesson-nav-bookmark" fill="currentColor" />}
+                          {completed && <span className="lesson-nav-complete"><Check size={11} strokeWidth={3} /></span>}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               )}
-            </div>
+            </section>
           );
         })}
       </div>

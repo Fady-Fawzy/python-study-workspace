@@ -3,6 +3,54 @@ import { StudyStateV1, BackupData } from '../types/state';
 const STORAGE_KEY = 'py_study_workspace_state_v1';
 const BACKUP_VERSION = '1.0.0';
 
+const uniqueStrings = (value: unknown): string[] => (
+  Array.isArray(value)
+    ? [...new Set(value.filter((item): item is string => typeof item === 'string'))]
+    : []
+);
+
+const uniqueNumbers = (value: unknown): number[] => (
+  Array.isArray(value)
+    ? [...new Set(value.filter((item): item is number => (
+      typeof item === 'number' && Number.isInteger(item) && item >= 0
+    )))]
+    : []
+);
+
+const sanitizeLessonNotes = (value: unknown): Record<string, string> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  );
+};
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+};
+
+const sanitizeState = (candidate: Record<string, unknown>): StudyStateV1 => ({
+  version: 1,
+  completedLessons: uniqueStrings(candidate.completedLessons),
+  bookmarkedLessons: uniqueStrings(candidate.bookmarkedLessons),
+  bookmarkedSyntax: uniqueNumbers(candidate.bookmarkedSyntax),
+  lessonNotes: sanitizeLessonNotes(candidate.lessonNotes),
+  lastOpenedLessonId: typeof candidate.lastOpenedLessonId === 'string' || candidate.lastOpenedLessonId === null
+    ? candidate.lastOpenedLessonId
+    : '020',
+  recentLessonIds: Array.isArray(candidate.recentLessonIds)
+    ? uniqueStrings(candidate.recentLessonIds)
+    : ['020'],
+  theme: candidate.theme === 'dark' || candidate.theme === 'light' || candidate.theme === 'system'
+    ? candidate.theme
+    : 'system',
+  preferredMode: candidate.preferredMode === 'quickReview' || candidate.preferredMode === 'detailed'
+    ? candidate.preferredMode
+    : 'detailed',
+  updatedAt: typeof candidate.updatedAt === 'string' ? candidate.updatedAt : new Date().toISOString()
+});
+
 export const INITIAL_STATE: StudyStateV1 = {
   version: 1,
   completedLessons: [],
@@ -38,18 +86,7 @@ export function loadStudyState(): StudyStateV1 {
       return { ...INITIAL_STATE };
     }
 
-    return {
-      version: 1,
-      completedLessons: Array.isArray(parsed.completedLessons) ? parsed.completedLessons : [],
-      bookmarkedLessons: Array.isArray(parsed.bookmarkedLessons) ? parsed.bookmarkedLessons : [],
-      bookmarkedSyntax: Array.isArray(parsed.bookmarkedSyntax) ? parsed.bookmarkedSyntax : [],
-      lessonNotes: (parsed.lessonNotes && typeof parsed.lessonNotes === 'object') ? parsed.lessonNotes : {},
-      lastOpenedLessonId: typeof parsed.lastOpenedLessonId === 'string' ? parsed.lastOpenedLessonId : '020',
-      recentLessonIds: Array.isArray(parsed.recentLessonIds) ? parsed.recentLessonIds : ['020'],
-      theme: ['dark', 'light', 'system'].includes(parsed.theme) ? parsed.theme : 'system',
-      preferredMode: ['detailed', 'quickReview'].includes(parsed.preferredMode) ? parsed.preferredMode : 'detailed',
-      updatedAt: parsed.updatedAt || new Date().toISOString()
-    };
+    return sanitizeState(parsed as Record<string, unknown>);
   } catch (err) {
     console.error('Error reading localStorage:', err);
     return { ...INITIAL_STATE };
@@ -87,16 +124,21 @@ export function exportBackup(state: StudyStateV1): void {
 
   const jsonStr = JSON.stringify(backup, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  let url: string | null = null;
+  let anchor: HTMLAnchorElement | null = null;
 
-  const a = document.createElement('a');
-  a.href = url;
-  const dateStr = new Date().toISOString().split('T')[0];
-  a.download = `python-study-backup-${dateStr}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    url = URL.createObjectURL(blob);
+    anchor = document.createElement('a');
+    anchor.href = url;
+    const dateStr = new Date().toISOString().split('T')[0];
+    anchor.download = `python-study-backup-${dateStr}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+  } finally {
+    anchor?.remove();
+    if (url) URL.revokeObjectURL(url);
+  }
 }
 
 /**
@@ -105,24 +147,15 @@ export function exportBackup(state: StudyStateV1): void {
 export function importBackup(jsonString: string): { success: boolean; state?: StudyStateV1; error?: string } {
   try {
     const data = JSON.parse(jsonString);
-    const candidate = data.state || data; // Support either full backup wrapper or bare state
-
-    if (!candidate || typeof candidate !== 'object') {
+    if (!isPlainRecord(data)) {
       return { success: false, error: 'Invalid backup format' };
     }
 
-    const sanitized: StudyStateV1 = {
-      version: 1,
-      completedLessons: Array.isArray(candidate.completedLessons) ? candidate.completedLessons : [],
-      bookmarkedLessons: Array.isArray(candidate.bookmarkedLessons) ? candidate.bookmarkedLessons : [],
-      bookmarkedSyntax: Array.isArray(candidate.bookmarkedSyntax) ? candidate.bookmarkedSyntax : [],
-      lessonNotes: (candidate.lessonNotes && typeof candidate.lessonNotes === 'object') ? candidate.lessonNotes : {},
-      lastOpenedLessonId: typeof candidate.lastOpenedLessonId === 'string' ? candidate.lastOpenedLessonId : '020',
-      recentLessonIds: Array.isArray(candidate.recentLessonIds) ? candidate.recentLessonIds : ['020'],
-      theme: ['dark', 'light', 'system'].includes(candidate.theme) ? candidate.theme : 'system',
-      preferredMode: ['detailed', 'quickReview'].includes(candidate.preferredMode) ? candidate.preferredMode : 'detailed',
-      updatedAt: new Date().toISOString()
-    };
+    const candidate = Object.prototype.hasOwnProperty.call(data, 'state') ? data.state : data;
+    if (!isPlainRecord(candidate)) return { success: false, error: 'Invalid backup format' };
+
+    const sanitized = sanitizeState(candidate);
+    sanitized.updatedAt = new Date().toISOString();
 
     saveStudyState(sanitized);
     return { success: true, state: sanitized };
