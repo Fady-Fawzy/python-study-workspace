@@ -70,6 +70,7 @@ export function App() {
   };
 
   const [currentPath, setCurrentPath] = useState<string>(getInitialPath);
+  const [isLessonFullView, setIsLessonFullView] = useState(false);
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -101,6 +102,12 @@ export function App() {
 
   const route = parseRoute(currentPath);
 
+  useEffect(() => {
+    if (route.view !== 'lesson') {
+      setIsLessonFullView(false);
+    }
+  }, [route.view]);
+
   // Render View based on Route
   const renderView = () => {
     switch (route.view) {
@@ -114,6 +121,8 @@ export function App() {
             state={state}
             onUpdateState={updateState}
             onNavigate={navigate}
+            isFullView={isLessonFullView}
+            onFullViewChange={setIsLessonFullView}
           />
         );
       case 'reference':
@@ -169,6 +178,7 @@ export function App() {
       onNavigate={navigate}
       onUpdateState={updateState}
       onThemeChange={handleThemeChange}
+      isFullView={route.view === 'lesson' && isLessonFullView}
     >
       {renderView()}
     </AppShell>

@@ -19,6 +19,7 @@ interface AppShellProps {
   onNavigate: (path: string) => void;
   onUpdateState: (updater: (prev: StudyStateV1) => StudyStateV1) => void;
   onThemeChange: (theme: 'dark' | 'light' | 'system') => void;
+  isFullView?: boolean;
   children: React.ReactNode;
 }
 
@@ -31,6 +32,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onNavigate,
   onUpdateState,
   onThemeChange,
+  isFullView = false,
   children
 }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -67,7 +69,11 @@ export const AppShell: React.FC<AppShellProps> = ({
   const isFullWidthPage = currentPath.startsWith('/reference') || currentPath === '/bookmarks' || currentPath === '/notes';
 
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell${isFullView ? ' app-shell--full-view' : ''}`}
+      data-full-view={isFullView ? 'true' : undefined}
+      data-testid="app-shell"
+    >
       {/* Desktop Sidebar (visible on screens > 1024px) */}
       <Sidebar
         lessons={lessons}

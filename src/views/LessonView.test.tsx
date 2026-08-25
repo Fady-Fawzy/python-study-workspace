@@ -87,4 +87,27 @@ describe('LessonView', () => {
     const modePanel = screen.getByRole('tabpanel');
     expect(trigger.compareDocumentPosition(modePanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it('forwards full-view changes from the lesson header', async () => {
+    window.scrollTo = vi.fn();
+    const user = userEvent.setup();
+    const onFullViewChange = vi.fn();
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{}}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+        isFullView={false}
+        onFullViewChange={onFullViewChange}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Full View' }));
+    expect(onFullViewChange).toHaveBeenCalledWith(true);
+  });
 });

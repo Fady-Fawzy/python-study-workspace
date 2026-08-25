@@ -18,6 +18,8 @@ interface LessonViewProps {
   state: StudyStateV1;
   onUpdateState: (updater: (prev: StudyStateV1) => StudyStateV1) => void;
   onNavigate: (path: string) => void;
+  isFullView?: boolean;
+  onFullViewChange?: (active: boolean) => void;
 }
 
 export const LessonView: React.FC<LessonViewProps> = ({
@@ -27,7 +29,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
   syntaxSections,
   state,
   onUpdateState,
-  onNavigate
+  onNavigate,
+  isFullView = false,
+  onFullViewChange = () => undefined
 }) => {
   const [activeMode, setActiveMode] = useState<'detailed' | 'quickReview'>(state.preferredMode || 'detailed');
 
@@ -116,6 +120,8 @@ export const LessonView: React.FC<LessonViewProps> = ({
           onToggleComplete={handleToggleComplete}
           onToggleBookmark={handleToggleBookmark}
           onModeChange={handleModeChange}
+          isFullView={isFullView}
+          onToggleFullView={onFullViewChange}
         />
 
         {activeMode === 'detailed' && detailedToc.length > 1 && (

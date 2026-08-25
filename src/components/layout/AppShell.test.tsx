@@ -60,7 +60,11 @@ const searchIndex = [
   }
 ];
 
-function renderShell(path = '/lesson/020', children: React.ReactNode = <p>Lesson content</p>) {
+function renderShell(
+  path = '/lesson/020',
+  children: React.ReactNode = <p>Lesson content</p>,
+  isFullView = false
+) {
   const onNavigate = vi.fn();
   const getShell = (nextPath: string) => (
     <AppShell
@@ -73,6 +77,7 @@ function renderShell(path = '/lesson/020', children: React.ReactNode = <p>Lesson
       onNavigate={onNavigate}
       onUpdateState={vi.fn()}
       onThemeChange={vi.fn()}
+      isFullView={isFullView}
     >
       {children}
     </AppShell>
@@ -99,6 +104,12 @@ describe('application shell navigation', () => {
       .toHaveAttribute('aria-current', 'page');
     expect(within(drawer).getByRole('button', { name: /operators & expressions/i })).toHaveAttribute('aria-expanded', 'true');
     expect(within(drawer).getByRole('button', { name: /close navigation drawer/i })).toHaveFocus();
+  });
+
+  it('marks the shell when Full View is active so non-study chrome can be removed', () => {
+    renderShell('/lesson/020', <p>Lesson content</p>, true);
+
+    expect(screen.getByTestId('app-shell')).toHaveAttribute('data-full-view', 'true');
   });
 
   it('traps focus, closes with Escape, restores focus and restores body scroll', async () => {

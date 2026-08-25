@@ -11,9 +11,11 @@ function renderHeader(overrides: Partial<React.ComponentProps<typeof LessonHeade
     isCompleted: false,
     isBookmarked: false,
     activeMode: 'detailed',
+    isFullView: false,
     onToggleComplete: vi.fn(),
     onToggleBookmark: vi.fn(),
     onModeChange: vi.fn(),
+    onToggleFullView: vi.fn(),
     ...overrides
   };
   render(<LessonHeader {...props} />);
@@ -52,5 +54,21 @@ describe('LessonHeader', () => {
     await user.click(completion);
     expect(props.onToggleBookmark).toHaveBeenCalledTimes(1);
     expect(props.onToggleComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes a full-view toggle that can also exit the focused reading mode', async () => {
+    const user = userEvent.setup();
+    const props = renderHeader();
+
+    const enterButton = screen.getByRole('button', { name: 'Full View' });
+    expect(enterButton).toHaveAttribute('aria-pressed', 'false');
+    await user.click(enterButton);
+    expect(props.onToggleFullView).toHaveBeenCalledWith(true);
+
+    const exitProps = renderHeader({ isFullView: true });
+    const exitButton = screen.getByRole('button', { name: 'Exit Full View' });
+    expect(exitButton).toHaveAttribute('aria-pressed', 'true');
+    await user.click(exitButton);
+    expect(exitProps.onToggleFullView).toHaveBeenCalledWith(false);
   });
 });

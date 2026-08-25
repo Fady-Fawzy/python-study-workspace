@@ -1,5 +1,5 @@
 import React, { KeyboardEvent } from 'react';
-import { BookOpen, Check, Zap } from 'lucide-react';
+import { BookOpen, Check, Maximize2, Minimize2, Zap } from 'lucide-react';
 import { BookmarkButton } from '../shared/BookmarkButton';
 
 interface LessonHeaderProps {
@@ -12,6 +12,8 @@ interface LessonHeaderProps {
   onToggleComplete: () => void;
   onToggleBookmark: () => void;
   onModeChange: (mode: 'detailed' | 'quickReview') => void;
+  isFullView?: boolean;
+  onToggleFullView?: (active: boolean) => void;
 }
 
 const modes = ['detailed', 'quickReview'] as const;
@@ -25,7 +27,9 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
   activeMode,
   onToggleComplete,
   onToggleBookmark,
-  onModeChange
+  onModeChange,
+  isFullView = false,
+  onToggleFullView = () => undefined
 }) => {
   const selectMode = (mode: typeof modes[number]) => {
     onModeChange(mode);
@@ -61,21 +65,39 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
         </div>
 
         <div className="lesson-header__actions" aria-label="Lesson actions">
-          <BookmarkButton
-            isBookmarked={isBookmarked}
-            onToggle={onToggleBookmark}
-            title="Bookmark this lesson"
-          />
+          <div className="lesson-header__secondary-actions">
+            <BookmarkButton
+              isBookmarked={isBookmarked}
+              onToggle={onToggleBookmark}
+              title="Bookmark this lesson"
+            />
+            <button
+              type="button"
+              className="lesson-complete-button"
+              data-completed={isCompleted || undefined}
+              onClick={onToggleComplete}
+              aria-pressed={isCompleted}
+              aria-label={isCompleted ? 'Lesson completed; mark incomplete' : 'Mark lesson complete'}
+            >
+              <Check size={16} strokeWidth={isCompleted ? 3 : 2} aria-hidden="true" />
+              <span>{isCompleted ? 'Completed' : 'Mark Complete'}</span>
+            </button>
+          </div>
           <button
             type="button"
-            className="lesson-complete-button"
-            data-completed={isCompleted || undefined}
-            onClick={onToggleComplete}
-            aria-pressed={isCompleted}
-            aria-label={isCompleted ? 'Lesson completed; mark incomplete' : 'Mark lesson complete'}
+            className="lesson-full-view-toggle"
+            data-active={isFullView || undefined}
+            onClick={() => onToggleFullView(!isFullView)}
+            aria-pressed={isFullView}
+            aria-label={isFullView ? 'Exit Full View' : 'Full View'}
+            title={isFullView ? 'Exit Full View' : 'Full View'}
           >
-            <Check size={16} strokeWidth={isCompleted ? 3 : 2} aria-hidden="true" />
-            <span>{isCompleted ? 'Completed' : 'Mark Complete'}</span>
+            {isFullView ? (
+              <Minimize2 size={16} strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <Maximize2 size={16} strokeWidth={2} aria-hidden="true" />
+            )}
+            <span>{isFullView ? 'Exit Full View' : 'Full View'}</span>
           </button>
         </div>
       </div>

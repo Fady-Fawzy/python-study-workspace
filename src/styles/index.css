@@ -420,6 +420,37 @@ p {
   gap: var(--space-2);
 }
 
+.lesson-header__secondary-actions {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  gap: var(--space-2);
+}
+
+.lesson-full-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--touch-target);
+  gap: var(--space-2);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.lesson-full-view-toggle:hover,
+.lesson-full-view-toggle[data-active] {
+  border-color: var(--border-active);
+  background-color: var(--accent-primary-muted);
+  color: var(--accent-primary);
+}
+
 .bookmark-btn {
   justify-content: center;
   inline-size: var(--touch-target);
@@ -1432,6 +1463,33 @@ p {
 
 .app-content.full-width {
   max-inline-size: min(100%, var(--content-wide-max-width));
+}
+
+/* Focused reading mode: keep the lesson itself and remove navigation chrome. */
+.app-shell--full-view .app-sidebar-container,
+.app-shell--full-view .app-header,
+.app-shell--full-view .lesson-header__secondary-actions,
+.app-shell--full-view .lesson-notes,
+.app-shell--full-view .lesson-pagination {
+  display: none;
+}
+
+.app-shell--full-view .app-main-wrapper {
+  min-block-size: 100vh;
+}
+
+.app-shell--full-view .app-content {
+  max-inline-size: min(100%, var(--content-wide-max-width));
+  padding-block-start: max(var(--space-6), var(--safe-area-top));
+}
+
+.app-shell--full-view .lesson-layout {
+  gap: 0;
+}
+
+.app-shell--full-view .lesson-main-column {
+  max-inline-size: var(--content-wide-max-width);
+  margin-inline: auto;
 }
 
 /* Touch targets */
@@ -4091,6 +4149,22 @@ button, .nav-item, .clickable {
   .lesson-header__actions {
     inline-size: 100%;
     margin-inline-start: 0;
+    flex-wrap: wrap;
+  }
+
+  .lesson-header__secondary-actions {
+    flex: 1 1 170px;
+    min-inline-size: 0;
+  }
+
+  .lesson-header__secondary-actions .lesson-complete-button {
+    min-inline-size: 0;
+    flex: 1;
+  }
+
+  .lesson-full-view-toggle {
+    flex: 1 1 112px;
+    min-inline-size: 0;
   }
 
   .lesson-complete-button {
@@ -4158,5 +4232,16 @@ button, .nav-item, .clickable {
 
   .lesson-pagination__link {
     min-block-size: 84px;
+  }
+}
+
+@media (max-width: 360px) {
+  .lesson-header__secondary-actions,
+  .lesson-full-view-toggle {
+    inline-size: 100%;
+  }
+
+  .lesson-full-view-toggle {
+    flex-basis: auto;
   }
 }
