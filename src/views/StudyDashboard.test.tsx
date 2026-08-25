@@ -218,4 +218,44 @@ describe('study dashboard', () => {
     expect(within(activity).getByText(/studied today/i)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /course progress/i })).toBeInTheDocument();
   });
+
+  it('shows a focused study session from the smart recommendation', async () => {
+    const user = userEvent.setup();
+    localStorage.clear();
+    writeReadingProgress('021', 37);
+    const onNavigate = renderDashboard({ lastOpenedLessonId: '020' });
+
+    const focus = screen.getByRole('region', { name: /today's focus/i });
+    expect(within(focus).getByText('Lesson 021')).toBeInTheDocument();
+    expect(within(focus).getByText('37%')).toBeInTheDocument();
+    await user.click(within(focus).getByRole('button', { name: /open focus lesson 021/i }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/lesson/021');
+  });
+
+  it('shows normalized reading progress in recent lesson rows', () => {
+    localStorage.clear();
+    writeReadingProgress('074', 42.4);
+    renderDashboard({ recentLessonIds: ['074'] });
+
+    const recentRegion = screen.getByRole('region', { name: /recently studied/i });
+    expect(within(recentRegion).getByText('42%')).toBeInTheDocument();
+    expect(
+      within(recentRegion).getByRole('progressbar', { name: /lesson 074 reading progress/i }),
+    ).toHaveValue(42);
+  });
+
+  it('shows partial and bookmarked lessons in a needs-attention queue', async () => {
+    const user = userEvent.setup();
+    localStorage.clear();
+    writeReadingProgress('074', 25);
+    const onNavigate = renderDashboard({
+      lastOpenedLessonId: '020',
+      bookmarkedLessons: ['074']
+    });
+
+    const attention = screen.getByRole('region', { name: /needs attention/i });
+    expect(within(attention).getByRole('button', { name: /lesson 074.*25%/i })).toBeInTheDocument();
+    await user.click(within(attention).getByRole('button', { name: /lesson 074/i }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/lesson/074');
+  });
 });

@@ -11,9 +11,10 @@ import {
   Play
 } from 'lucide-react';
 import { LESSON_CATEGORIES } from '../lib/lessonMapping';
+import { getDashboardInsights } from '../lib/dashboardInsights';
 import { getNextLessonRecommendation, RecommendationReason } from '../lib/nextLesson';
 import { readReadingPosition } from '../lib/readingPosition';
-import { readReadingProgress } from '../lib/readingProgress';
+import { readAllReadingProgress, readReadingProgress } from '../lib/readingProgress';
 import { getStudyActivitySummary, readStudyActivity, StudyActivity } from '../lib/studyActivity';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
@@ -72,6 +73,14 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
     state.lastOpenedLessonId,
     readReadingProgress
   );
+  const dashboardInsights = getDashboardInsights(
+    lessons,
+    completedIds,
+    state.bookmarkedLessons,
+    state.recentLessonIds,
+    recommendation,
+    readAllReadingProgress(),
+  );
   const nextLesson = recommendation.lesson;
 
   const savedLesson = lessons.find((lesson) => lesson.id === state.lastOpenedLessonId);
@@ -80,10 +89,7 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
   const hasSavedReadingPosition = Boolean(lastLesson && readReadingPosition(lastLesson.id) > 0);
   const lastLessonProgress = lastLesson ? readReadingProgress(lastLesson.id) : 0;
 
-  const recentLessons = state.recentLessonIds
-    .map((id) => lessons.find((lesson) => lesson.id === id))
-    .filter((lesson): lesson is Lesson => Boolean(lesson))
-    .slice(0, 5);
+  const recentLessons = dashboardInsights.queue;
 
   const bookmarkedLessons = state.bookmarkedLessons
     .map((id) => lessons.find((lesson) => lesson.id === id))
@@ -137,6 +143,73 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
             <span>{hasSavedLesson ? 'Resume Lesson' : 'Start Lesson'}</span>
             <ArrowRight size={18} aria-hidden="true" />
           </button>
+        </section>
+      )}
+
+      {totalLessons > 0 && (
+        <section
+          className={`dashboard-focus ui-card${dashboardInsights.focus ? '' : ' dashboard-focus--complete'}`}
+          aria-label="Today's focus"
+        >
+          {dashboardInsights.focus ? (
+            <>
+              <div className="dashboard-focus__content">
+                <div className="dashboard-focus__header">
+                  <div className="dashboard-section-title">
+                    <span className="dashboard-section-title__icon dashboard-section-title__icon--focus">
+                      <ListChecks size={16} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h2>Today&apos;s focus</h2>
+                      <p>One focused lesson keeps your study trail moving.</p>
+                    </div>
+                  </div>
+                  <span className="dashboard-focus__target">1 lesson</span>
+                </div>
+                <div className="dashboard-focus__lesson-meta">
+                  <span className="dashboard-lesson-number">Lesson {dashboardInsights.focus.lesson.id}</span>
+                  {recommendation.reason && (
+                    <span>{recommendationLabels[recommendation.reason]}</span>
+                  )}
+                </div>
+                <h2 className="dashboard-focus__title">{dashboardInsights.focus.lesson.title}</h2>
+                {dashboardInsights.focus.progress > 0 ? (
+                  <div className="dashboard-focus__progress">
+                    <div className="dashboard-focus__progress-header">
+                      <span>Reading progress</span>
+                      <strong dir="ltr">{dashboardInsights.focus.progress}%</strong>
+                    </div>
+                    <progress
+                      value={dashboardInsights.focus.progress}
+                      max={100}
+                      aria-label={`Lesson ${dashboardInsights.focus.lesson.id} focus progress`}
+                    />
+                  </div>
+                ) : (
+                  <p className="dashboard-focus__note">Start here when you are ready for your next focused session.</p>
+                )}
+              </div>
+              <button
+                type="button"
+                className="dashboard-primary-action dashboard-focus__action"
+                aria-label={`Open focus lesson ${dashboardInsights.focus.lesson.id}: ${dashboardInsights.focus.lesson.title}`}
+                onClick={() => onNavigate(`/lesson/${dashboardInsights.focus?.lesson.id}`)}
+              >
+                <span>{dashboardInsights.focus.progress > 0 ? 'Resume Focus' : 'Start Focus'}</span>
+                <ArrowRight size={18} aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <div className="dashboard-focus__complete">
+              <span className="dashboard-section-title__icon dashboard-section-title__icon--success">
+                <Check size={16} aria-hidden="true" />
+              </span>
+              <div>
+                <h2>Today&apos;s focus is complete</h2>
+                <p>You have finished every lesson in this course. Nice work.</p>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -254,6 +327,50 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
         )}
       </section>
 
+      <section className="dashboard-attention ui-card" aria-label="Needs attention">
+        <div className="dashboard-attention__header">
+          <div className="dashboard-section-title">
+            <span className="dashboard-section-title__icon dashboard-section-title__icon--attention">
+              <Clock size={16} aria-hidden="true" />
+            </span>
+            <div>
+              <h2>Needs attention</h2>
+              <p>Pick up a partial or bookmarked lesson when you have a little more time.</p>
+            </div>
+          </div>
+          <span className="dashboard-attention__count" dir="ltr">{dashboardInsights.attention.length}</span>
+        </div>
+
+        {dashboardInsights.attention.length === 0 ? (
+          <div className="dashboard-attention__empty">
+            <Check size={18} aria-hidden="true" />
+            <span>You&apos;re on track. No unfinished saved lessons need attention.</span>
+          </div>
+        ) : (
+          <div className="dashboard-attention__list">
+            {dashboardInsights.attention.map((item) => (
+              <button
+                key={item.lesson.id}
+                type="button"
+                className="dashboard-attention__row"
+                aria-label={`${lessonActionLabel(item.lesson, item.completed)}${item.progress > 0 ? `, ${item.progress}% reading progress` : ''}`}
+                onClick={() => onNavigate(`/lesson/${item.lesson.id}`)}
+              >
+                <span className="dashboard-lesson-row__number">{item.lesson.id}</span>
+                <span className="dashboard-attention__copy">
+                  <span className="dashboard-attention__title">{item.lesson.title}</span>
+                  <span className="dashboard-attention__meta">
+                    {item.reason === 'bookmark' ? 'Bookmarked lesson' : 'In progress'}
+                    {item.progress > 0 ? ` · ${item.progress}% read` : ''}
+                  </span>
+                </span>
+                <ArrowRight className="dashboard-lesson-row__arrow" size={15} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="dashboard-resume-grid">
         <section className="dashboard-list-card ui-card" aria-labelledby="dashboard-recent-title">
           <header className="dashboard-list-card__header">
@@ -273,19 +390,30 @@ export const StudyDashboard: React.FC<StudyDashboardProps> = ({
             </div>
           ) : (
             <div className="dashboard-lesson-list">
-              {recentLessons.map((lesson) => {
-                const isCompleted = completedIds.has(lesson.id);
+              {recentLessons.map((item) => {
                 return (
                   <button
-                    key={lesson.id}
+                    key={item.lesson.id}
                     type="button"
                     className="dashboard-lesson-row"
-                    aria-label={lessonActionLabel(lesson, isCompleted)}
-                    onClick={() => onNavigate(`/lesson/${lesson.id}`)}
+                    aria-label={`${lessonActionLabel(item.lesson, item.completed)}${item.progress > 0 ? `, ${item.progress}% reading progress` : ''}`}
+                    onClick={() => onNavigate(`/lesson/${item.lesson.id}`)}
                   >
-                    <span className="dashboard-lesson-row__number">{lesson.id}</span>
-                    <span className="dashboard-lesson-row__title">{lesson.title}</span>
-                    {isCompleted ? (
+                    <span className="dashboard-lesson-row__number">{item.lesson.id}</span>
+                    <span className="dashboard-lesson-row__content">
+                      <span className="dashboard-lesson-row__title">{item.lesson.title}</span>
+                      {item.progress > 0 && (
+                        <span className="dashboard-lesson-row__progress">
+                          <progress
+                            value={item.progress}
+                            max={100}
+                            aria-label={`Lesson ${item.lesson.id} reading progress`}
+                          />
+                          <span dir="ltr">{item.progress}%</span>
+                        </span>
+                      )}
+                    </span>
+                    {item.completed ? (
                       <span className="dashboard-lesson-row__status dashboard-lesson-row__status--complete" aria-hidden="true">
                         <Check size={14} />
                       </span>

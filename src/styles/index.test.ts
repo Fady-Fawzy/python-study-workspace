@@ -121,4 +121,22 @@ describe('markdown styling contracts', () => {
       /@media \(max-width: 600px\)[\s\S]*?\.dashboard-continue__progress\s*\{[^}]*max-inline-size:\s*100%;/s
     );
   });
+
+  it('gives Dashboard 2.0 focus and attention surfaces compact responsive contracts', () => {
+    expect(stylesheet).toMatch(
+      /\.dashboard-focus\s*\{[^}]*display:\s*grid;[^}]*min-inline-size:\s*0;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.dashboard-focus__progress progress\s*\{[^}]*appearance:\s*none;[^}]*background-color:\s*var\(--bg-surface-raised\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.dashboard-attention__row\s*\{[^}]*min-block-size:\s*var\(--touch-target\);[^}]*min-inline-size:\s*0;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.dashboard-lesson-row__progress\s*\{[^}]*display:\s*flex;[^}]*min-inline-size:\s*0;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 600px\)[\s\S]*?\.dashboard-focus\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
+    );
+  });
 });

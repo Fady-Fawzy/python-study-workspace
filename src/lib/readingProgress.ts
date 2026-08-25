@@ -37,6 +37,8 @@ export const readReadingProgress = (lessonId: string): number => {
   return readProgressMap()[lessonId] ?? 0;
 };
 
+export const readAllReadingProgress = (): ReadingProgressMap => ({ ...readProgressMap() });
+
 export const writeReadingProgress = (lessonId: string, progress: number): void => {
   if (!lessonId.trim() || !Number.isFinite(progress)) return;
   const progressMap = readProgressMap();
