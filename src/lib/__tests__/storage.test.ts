@@ -94,4 +94,32 @@ describe('Storage Layer & Persistence', () => {
     expect(state.theme).toBe('system');
     expect(state.preferredMode).toBe('detailed');
   });
+
+  it('sanitizes malformed note values and typed collections loaded from storage', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      completedLessons: ['020', 21, null, '020'],
+      bookmarkedLessons: 'not-an-array',
+      bookmarkedSyntax: [3, '4', null, 3],
+      recentLessonIds: ['020', {}, '021'],
+      lessonNotes: {
+        '020': 'safe note',
+        '021': null,
+        '022': ['would crash trim'],
+        '023': 23
+      }
+    }));
+
+    const loaded = loadStudyState();
+    expect(loaded.completedLessons).toEqual(['020']);
+    expect(loaded.bookmarkedLessons).toEqual([]);
+    expect(loaded.bookmarkedSyntax).toEqual([3]);
+    expect(loaded.recentLessonIds).toEqual(['020', '021']);
+    expect(loaded.lessonNotes).toEqual({ '020': 'safe note' });
+    expect(() => Object.values(loaded.lessonNotes).filter(note => note.trim())).not.toThrow();
+  });
+
+  it.each([null, [], 'notes', 42])('replaces non-record lessonNotes value %p with an empty record', (lessonNotes) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ lessonNotes }));
+    expect(loadStudyState().lessonNotes).toEqual({});
+  });
 });

@@ -16,12 +16,18 @@
   --text-lg: 1.25rem;     /* 20px */
   --text-xl: 1.5rem;      /* 24px */
   --text-2xl: 1.875rem;   /* 30px */
+  --text-3xl: 2.25rem;    /* 36px */
 
   /* Line Heights */
   --leading-tight: 1.25;
   --leading-normal: 1.5;
   --leading-relaxed: 1.7;
   --leading-arabic: 1.85;
+  --leading-code: 1.65;
+
+  /* Code surfaces remain deliberately dark in both application themes. */
+  --code-text: #e2e8f0;
+  --code-muted: #a7b3c5;
 
   /* Spacing Scale */
   --space-1: 0.25rem;   /* 4px */
@@ -33,6 +39,7 @@
   --space-8: 2rem;      /* 32px */
   --space-10: 2.5rem;   /* 40px */
   --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
 
   /* Radius (Restrained & Functional) */
   --radius-sm: 4px;
@@ -46,11 +53,39 @@
   --transition-normal: 180ms ease;
   --transition-drawer: 240ms cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Controls & interaction */
+  --control-height-compact: 36px;
+  --touch-target: 44px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
   /* Layout Widths */
   --sidebar-width: 280px;
   --header-height: 56px;
   --content-max-width: 860px;
+  --content-wide-max-width: 1200px;
+  --reading-measure: 72ch;
   --toc-width: 220px;
+  --dialog-max-width: 580px;
+  --page-gutter: var(--space-6);
+  --page-gutter-compact: var(--space-3);
+
+  /* Documented responsive boundaries (mirrored by the media queries). */
+  --breakpoint-phone: 430px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-shell: 1024px;
+
+  /* Safe-area values stay zero on devices that do not expose an inset. */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+
+  /* Layering */
+  --z-sticky: 10;
+  --z-navigation: 20;
+  --z-overlay: 100;
+  --z-dialog: 110;
 }
 
 /* Dark Theme (Default) */
@@ -64,6 +99,7 @@
   --bg-code-header: #0e141e;
   --bg-badge: #182234;
   --bg-callout: rgba(56, 139, 253, 0.08);
+  --bg-overlay: rgba(3, 7, 18, 0.76);
 
   --border-subtle: #1c2638;
   --border-default: #25334a;
@@ -71,8 +107,8 @@
   --border-code: #1e2a3e;
 
   --text-primary: #e6edf3;
-  --text-secondary: #9fb0c7;
-  --text-muted: #627288;
+  --text-secondary: #a9b8cb;
+  --text-muted: #8090a6;
   --text-inverse: #090d14;
 
   --accent-primary: #388bfd;
@@ -88,12 +124,13 @@
   --accent-danger: #f85149;
   --accent-danger-muted: rgba(248, 81, 73, 0.15);
 
-  --focus-ring: 0 0 0 2px #388bfd;
+  --focus-ring-color: #58a6ff;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6);
 
-  --prism-comment: #627288;
+  --prism-comment: #7d8da3;
   --prism-builtin: #79c0ff;
   --prism-string: #a5d6ff;
   --prism-number: #79c0ff;
@@ -114,6 +151,7 @@
   --bg-code-header: #1e293b;
   --bg-badge: #e2e8f0;
   --bg-callout: rgba(37, 99, 235, 0.06);
+  --bg-overlay: rgba(15, 23, 42, 0.58);
 
   --border-subtle: #e2e8f0;
   --border-default: #cbd5e1;
@@ -122,23 +160,26 @@
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
   --text-inverse: #ffffff;
 
   --accent-primary: #2563eb;
   --accent-primary-hover: #1d4ed8;
   --accent-primary-muted: rgba(37, 99, 235, 0.1);
 
-  --accent-gold: #d97706;
-  --accent-gold-muted: rgba(217, 119, 6, 0.1);
+  /* Foregrounds use the darker scale steps so small text remains AA on
+     white, raised, and the matching muted semantic surface. */
+  --accent-gold: #92400e;
+  --accent-gold-muted: rgba(146, 64, 14, 0.1);
 
-  --accent-success: #16a34a;
-  --accent-success-muted: rgba(22, 163, 74, 0.1);
+  --accent-success: #166534;
+  --accent-success-muted: rgba(22, 101, 52, 0.1);
 
-  --accent-danger: #dc2626;
-  --accent-danger-muted: rgba(220, 38, 38, 0.1);
+  --accent-danger: #b91c1c;
+  --accent-danger-muted: rgba(185, 28, 28, 0.1);
 
-  --focus-ring: 0 0 0 2px #2563eb;
+  --focus-ring-color: #2563eb;
+  --focus-ring: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);

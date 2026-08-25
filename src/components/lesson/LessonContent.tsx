@@ -19,7 +19,7 @@ function renderFormattedHtml(text: string): string {
 
 export const LessonContent: React.FC<LessonContentProps> = ({ sections }) => {
   return (
-    <div className="lesson-body-content" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+    <article className="lesson-body-content">
       {sections.map(section => {
         if (section.type === 'code') {
           return (
@@ -34,15 +34,8 @@ export const LessonContent: React.FC<LessonContentProps> = ({ sections }) => {
         if (section.heading) {
           const Tag = section.level === 2 ? 'h2' : section.level === 3 ? 'h3' : 'h4';
           return (
-            <div key={section.id} id={section.id} style={{ scrollMarginTop: '80px', marginTop: 'var(--space-4)' }}>
-              <Tag
-                dir="auto"
-                className="arabic-text"
-                style={{
-                  color: 'var(--text-primary)',
-                  marginBottom: 'var(--space-2)'
-                }}
-              >
+            <div key={section.id} id={section.id} className="lesson-section-heading">
+              <Tag dir="auto" className="arabic-text">
                 {section.heading}
               </Tag>
             </div>
@@ -77,15 +70,11 @@ export const LessonContent: React.FC<LessonContentProps> = ({ sections }) => {
             key={section.id}
             className="arabic-text"
             dir="auto"
-            style={{
-              fontSize: 'var(--text-base)',
-              lineHeight: 'var(--leading-arabic)',
-              color: 'var(--text-secondary)'
-            }}
+            data-lesson-block="prose"
             dangerouslySetInnerHTML={{ __html: renderFormattedHtml(section.content) }}
           />
         );
       })}
-    </div>
+    </article>
   );
 };

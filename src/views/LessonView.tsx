@@ -103,9 +103,9 @@ export const LessonView: React.FC<LessonViewProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'flex-start' }}>
+    <div className="lesson-layout">
       {/* Main Lesson Column */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="lesson-main-column">
         <LessonHeader
           lessonId={lesson.id}
           title={lesson.title}
@@ -118,19 +118,31 @@ export const LessonView: React.FC<LessonViewProps> = ({
           onModeChange={handleModeChange}
         />
 
-        {/* Dynamic Mode Content */}
-        {activeMode === 'detailed' ? (
-          detailedLesson ? (
-            <DetailedLessonContent lesson={detailedLesson} />
-          ) : (
-            <LessonContent sections={lesson.parsedSections} />
-          )
-        ) : (
-          <QuickReviewContent
-            syntaxSections={matchedSyntaxSections}
-            onOpenFullReference={(secId: number) => onNavigate(`/reference?section=${secId}`)}
-          />
+        {activeMode === 'detailed' && detailedToc.length > 1 && (
+          <TableOfContents items={detailedToc} variant="mobile" />
         )}
+
+        {/* Dynamic Mode Content */}
+        <div
+          id={`lesson-${lesson.id}-mode-panel`}
+          className="lesson-mode-panel"
+          role="tabpanel"
+          aria-labelledby={`lesson-${lesson.id}-${activeMode}-tab`}
+          tabIndex={0}
+        >
+          {activeMode === 'detailed' ? (
+            detailedLesson ? (
+              <DetailedLessonContent lesson={detailedLesson} />
+            ) : (
+              <LessonContent sections={lesson.parsedSections} />
+            )
+          ) : (
+            <QuickReviewContent
+              syntaxSections={matchedSyntaxSections}
+              onOpenFullReference={(secId: number) => onNavigate(`/reference?section=${secId}`)}
+            />
+          )}
+        </div>
 
         {/* Personal Study Notes */}
         <LessonNotes
@@ -151,7 +163,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
       {/* Sticky Table of Contents (Desktop) */}
       {activeMode === 'detailed' && detailedToc.length > 1 && (
-        <TableOfContents items={detailedToc} />
+        <TableOfContents items={detailedToc} variant="desktop" />
       )}
     </div>
   );

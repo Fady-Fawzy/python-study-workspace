@@ -1,8 +1,8 @@
 import React from 'react';
 import { marked } from 'marked';
+import { ArrowUpRight, Zap } from 'lucide-react';
 import { SyntaxSection } from '../../types/content';
 import { CodeBlock } from '../code/CodeBlock';
-import { Zap, ArrowUpRight } from 'lucide-react';
 
 interface QuickReviewContentProps {
   syntaxSections: SyntaxSection[];
@@ -24,129 +24,52 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
 }) => {
   if (syntaxSections.length === 0) {
     return (
-      <div
-        style={{
-          padding: 'var(--space-8) var(--space-4)',
-          textAlign: 'center',
-          backgroundColor: 'var(--bg-surface)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px dashed var(--border-default)',
-          color: 'var(--text-muted)'
-        }}
-      >
-        <Zap size={24} style={{ marginBottom: 'var(--space-2)' }} />
-        <p style={{ fontSize: 'var(--text-sm)' }}>
-          Quick syntax reference for this lesson is being loaded.
-        </p>
+      <div className="quick-review-empty" role="status">
+        <Zap size={24} aria-hidden="true" />
+        <p>Quick syntax reference for this lesson is being loaded.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Notice header */}
-      <div
-        style={{
-          padding: 'var(--space-3) var(--space-4)',
-          backgroundColor: 'var(--bg-surface-raised)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-subtle)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 'var(--space-2)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-          <Zap size={14} color="var(--accent-gold)" />
+    <div className="quick-review">
+      <div className="quick-review__notice">
+        <div className="quick-review__notice-copy">
+          <Zap size={16} aria-hidden="true" />
           <span>Showing concise syntax and review rules from Syntax Reference</span>
         </div>
         {onOpenFullReference && (
           <button
             type="button"
+            className="quick-review__reference-link"
             onClick={() => onOpenFullReference(syntaxSections[0].id)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: 'var(--text-xs)',
-              color: 'var(--accent-primary)',
-              fontWeight: 500
-            }}
           >
             <span>Open in Syntax Explorer</span>
-            <ArrowUpRight size={12} />
+            <ArrowUpRight size={15} aria-hidden="true" />
           </button>
         )}
       </div>
 
       {syntaxSections.map(sec => (
-        <div
-          key={sec.id}
-          style={{
-            padding: 'var(--space-5)',
-            backgroundColor: 'var(--bg-surface)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-default)',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          {/* Section Header */}
-          <div
-            style={{
-              paddingBottom: 'var(--space-3)',
-              marginBottom: 'var(--space-4)',
-              borderBottom: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}
-          >
-            <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)' }}>
-              #{sec.id}) {sec.title}
+        <section key={sec.id} className="quick-review-card" aria-labelledby={`quick-review-${sec.id}`}>
+          <header className="quick-review-card__header">
+            <h2 id={`quick-review-${sec.id}`} dir="auto">
+              <bdi dir="ltr">#{sec.id})</bdi> {sec.title}
             </h2>
-            <span
-              style={{
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--bg-badge)',
-                color: 'var(--text-muted)'
-              }}
-            >
-              {sec.category}
-            </span>
-          </div>
+            <span className="quick-review-card__category" dir="auto">{sec.category}</span>
+          </header>
 
-          {/* Subsections & Code */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div className="quick-review-card__body">
             {sec.subsections.map(sub => (
-              <div key={sub.id} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <div key={sub.id} className="quick-review-subsection">
                 {sub.heading && (
-                  <h3
-                    dir="auto"
-                    className="arabic-text"
-                    style={{
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      marginTop: 'var(--space-2)'
-                    }}
-                  >
-                    {sub.heading}
-                  </h3>
+                  <h3 dir="auto" className="arabic-text">{sub.heading}</h3>
                 )}
 
                 {sub.content.trim() && (
                   <div
                     dir="auto"
-                    className="arabic-text"
-                    style={{
-                      fontSize: 'var(--text-sm)',
-                      color: 'var(--text-secondary)',
-                      lineHeight: 'var(--leading-arabic)'
-                    }}
+                    className="quick-review-subsection__content arabic-text"
                     dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
                   />
                 )}
@@ -156,12 +79,13 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
                     key={idx}
                     code={cb.code}
                     language={cb.language || 'python'}
+                    title={cb.title}
                   />
                 ))}
               </div>
             ))}
           </div>
-        </div>
+        </section>
       ))}
     </div>
   );

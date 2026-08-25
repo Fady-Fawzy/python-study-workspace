@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Bookmark, BookOpen, Code2, ArrowRight, Trash2 } from 'lucide-react';
+import React, { KeyboardEvent, useState } from 'react';
+import { ArrowRight, Bookmark, BookOpen, Code2, Trash2 } from 'lucide-react';
+import { EmptyState } from '../components/shared/EmptyState';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
-import { EmptyState } from '../components/shared/EmptyState';
 
 interface BookmarksViewProps {
   lessons: Lesson[];
@@ -12,6 +12,10 @@ interface BookmarksViewProps {
   onUpdateState: (updater: (prev: StudyStateV1) => StudyStateV1) => void;
 }
 
+type BookmarkFilter = 'all' | 'lessons' | 'syntax';
+
+const bookmarkFilters: BookmarkFilter[] = ['all', 'lessons', 'syntax'];
+
 export const BookmarksView: React.FC<BookmarksViewProps> = ({
   lessons,
   syntaxSections,
@@ -19,94 +23,85 @@ export const BookmarksView: React.FC<BookmarksViewProps> = ({
   onNavigate,
   onUpdateState
 }) => {
-  const [activeTab, setActiveTab] = useState<'all' | 'lessons' | 'syntax'>('all');
+  const [activeTab, setActiveTab] = useState<BookmarkFilter>('all');
 
   const bookmarkedLessons = state.bookmarkedLessons
-    .map((id: string) => lessons.find(l => l.id === id))
-    .filter((l): l is Lesson => Boolean(l));
+    .map((id) => lessons.find((lesson) => lesson.id === id))
+    .filter((lesson): lesson is Lesson => Boolean(lesson));
 
   const bookmarkedSyntax = state.bookmarkedSyntax
-    .map((secId: number) => syntaxSections.find(s => s.id === secId))
-    .filter((s): s is SyntaxSection => Boolean(s));
-
-  const handleRemoveLessonBookmark = (id: string) => {
-    onUpdateState(prev => ({
-      ...prev,
-      bookmarkedLessons: prev.bookmarkedLessons.filter((lId: string) => lId !== id)
-    }));
-  };
-
-  const handleRemoveSyntaxBookmark = (secId: number) => {
-    onUpdateState(prev => ({
-      ...prev,
-      bookmarkedSyntax: prev.bookmarkedSyntax.filter((sId: number) => sId !== secId)
-    }));
-  };
+    .map((sectionId) => syntaxSections.find((section) => section.id === sectionId))
+    .filter((section): section is SyntaxSection => Boolean(section));
 
   const totalBookmarks = bookmarkedLessons.length + bookmarkedSyntax.length;
+  const activeTabId = `bookmark-filter-${activeTab}`;
+  const hasVisibleBookmarks = activeTab === 'all'
+    ? totalBookmarks > 0
+    : activeTab === 'lessons'
+      ? bookmarkedLessons.length > 0
+      : bookmarkedSyntax.length > 0;
+
+  const handleRemoveLessonBookmark = (id: string) => {
+    onUpdateState((prev) => ({
+      ...prev,
+      bookmarkedLessons: prev.bookmarkedLessons.filter((lessonId) => lessonId !== id)
+    }));
+  };
+
+  const handleRemoveSyntaxBookmark = (sectionId: number) => {
+    onUpdateState((prev) => ({
+      ...prev,
+      bookmarkedSyntax: prev.bookmarkedSyntax.filter((savedId) => savedId !== sectionId)
+    }));
+  };
+
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, current: BookmarkFilter) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+
+    event.preventDefault();
+    const currentIndex = bookmarkFilters.indexOf(current);
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? bookmarkFilters.length - 1
+        : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + bookmarkFilters.length) % bookmarkFilters.length;
+    const nextTab = bookmarkFilters[nextIndex];
+
+    setActiveTab(nextTab);
+    document.getElementById(`bookmark-filter-${nextTab}`)?.focus();
+  };
+
+  const tabProps = (filter: BookmarkFilter) => ({
+    id: `bookmark-filter-${filter}`,
+    role: 'tab' as const,
+    'aria-selected': activeTab === filter,
+    'aria-controls': 'bookmarks-panel',
+    tabIndex: activeTab === filter ? 0 : -1,
+    onClick: () => setActiveTab(filter),
+    onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => handleTabKeyDown(event, filter),
+    'data-selected': activeTab === filter ? '' : undefined
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Header */}
-      <div style={{ paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
-          <Bookmark size={20} color="var(--accent-gold)" fill="var(--accent-gold)" />
-          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700 }}>
-            Saved Bookmarks
-          </h1>
+    <div className="saved-view bookmarks-view">
+      <header className="saved-view__header">
+        <div className="saved-view__eyebrow">
+          <Bookmark size={20} fill="currentColor" aria-hidden="true" />
+          <h1>Saved Bookmarks</h1>
         </div>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-          Quick access to saved lessons and syntax cheat sheet sections.
-        </p>
-      </div>
+        <p>Quick access to saved lessons and syntax reference sections.</p>
+      </header>
 
-      {/* Filter Tabs */}
       {totalBookmarks > 0 && (
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('all')}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: activeTab === 'all' ? 600 : 500,
-              backgroundColor: activeTab === 'all' ? 'var(--accent-primary-muted)' : 'var(--bg-surface)',
-              color: activeTab === 'all' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              border: `1px solid ${activeTab === 'all' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`
-            }}
-          >
-            All ({totalBookmarks})
+        <div className="bookmark-tabs" role="tablist" aria-label="Filter bookmarks">
+          <button type="button" className="bookmark-tab" {...tabProps('all')}>
+            All <span className="bookmark-tab__count">({totalBookmarks})</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('lessons')}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: activeTab === 'lessons' ? 600 : 500,
-              backgroundColor: activeTab === 'lessons' ? 'var(--accent-primary-muted)' : 'var(--bg-surface)',
-              color: activeTab === 'lessons' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              border: `1px solid ${activeTab === 'lessons' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`
-            }}
-          >
-            Lessons ({bookmarkedLessons.length})
+          <button type="button" className="bookmark-tab" {...tabProps('lessons')}>
+            Lessons <span className="bookmark-tab__count">({bookmarkedLessons.length})</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('syntax')}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: activeTab === 'syntax' ? 600 : 500,
-              backgroundColor: activeTab === 'syntax' ? 'var(--accent-primary-muted)' : 'var(--bg-surface)',
-              color: activeTab === 'syntax' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              border: `1px solid ${activeTab === 'syntax' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`
-            }}
-          >
-            Syntax Sections ({bookmarkedSyntax.length})
+          <button type="button" className="bookmark-tab" {...tabProps('syntax')}>
+            Syntax Sections <span className="bookmark-tab__count">({bookmarkedSyntax.length})</span>
           </button>
         </div>
       )}
@@ -115,147 +110,105 @@ export const BookmarksView: React.FC<BookmarksViewProps> = ({
         <EmptyState
           icon={Bookmark}
           title="No bookmarks yet"
-          description="Bookmark any lesson or syntax reference section during your studies to quickly revisit them here."
+          description="Bookmark any lesson or syntax reference section during your studies to quickly revisit it here."
           actionText="Browse Lessons"
           onAction={() => onNavigate('/')}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-          {/* Lessons Section */}
-          {(activeTab === 'all' || activeTab === 'lessons') && bookmarkedLessons.length > 0 && (
-            <div>
-              <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-3)' }}>
-                Bookmarked Lessons ({bookmarkedLessons.length})
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                {bookmarkedLessons.map((lesson: Lesson) => (
-                  <div
-                    key={lesson.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: 'var(--space-3) var(--space-4)',
-                      backgroundColor: 'var(--bg-surface)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-default)'
-                    }}
-                  >
-                    <div
-                      onClick={() => onNavigate(`/lesson/${lesson.id}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer', flex: 1, minWidth: 0 }}
-                    >
-                      <BookOpen size={16} color="var(--accent-primary)" />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          Lesson {lesson.id} — {lesson.title}
-                        </div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                          {lesson.category}
-                        </div>
-                      </div>
-                    </div>
+        <div
+          id="bookmarks-panel"
+          className="bookmarks-panel"
+          role="tabpanel"
+          aria-labelledby={activeTabId}
+          tabIndex={0}
+        >
+          {!hasVisibleBookmarks ? (
+            <EmptyState
+              icon={activeTab === 'lessons' ? BookOpen : Code2}
+              title={activeTab === 'lessons' ? 'No saved lessons' : 'No saved syntax sections'}
+              description={activeTab === 'lessons'
+                ? 'Your syntax bookmarks are still available. Switch back to see everything you saved.'
+                : 'Your lesson bookmarks are still available. Switch back to see everything you saved.'}
+              actionText="Show All Bookmarks"
+              onAction={() => setActiveTab('all')}
+            />
+          ) : (
+            <div className="bookmark-sections">
+              {(activeTab === 'all' || activeTab === 'lessons') && bookmarkedLessons.length > 0 && (
+                <section className="bookmark-section" aria-labelledby="bookmarked-lessons-heading">
+                  <h2 id="bookmarked-lessons-heading">
+                    Bookmarked Lessons <span>{bookmarkedLessons.length}</span>
+                  </h2>
+                  <ul className="bookmark-list">
+                    {bookmarkedLessons.map((lesson) => (
+                      <li className="bookmark-row" key={lesson.id}>
+                        <button
+                          type="button"
+                          className="bookmark-row__open"
+                          aria-label={`Open Lesson ${lesson.id}: ${lesson.title}`}
+                          onClick={() => onNavigate(`/lesson/${lesson.id}`)}
+                        >
+                          <BookOpen className="bookmark-row__icon" size={18} aria-hidden="true" />
+                          <span className="bookmark-row__content">
+                            <span className="bookmark-row__title">
+                              <bdi>Lesson {lesson.id}</bdi> — <bdi>{lesson.title}</bdi>
+                            </span>
+                            <span className="bookmark-row__meta"><bdi>{lesson.category}</bdi></span>
+                          </span>
+                          <ArrowRight className="bookmark-row__arrow" size={16} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="bookmark-row__remove"
+                          aria-label={`Remove Lesson ${lesson.id} bookmark`}
+                          title="Remove bookmark"
+                          onClick={() => handleRemoveLessonBookmark(lesson.id)}
+                        >
+                          <Trash2 size={17} aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLessonBookmark(lesson.id)}
-                        title="Remove bookmark"
-                        style={{ color: 'var(--text-muted)', padding: '6px' }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onNavigate(`/lesson/${lesson.id}`)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '6px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          backgroundColor: 'var(--bg-surface-raised)',
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 500,
-                          color: 'var(--text-primary)'
-                        }}
-                      >
-                        <span>Open</span>
-                        <ArrowRight size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Syntax Section */}
-          {(activeTab === 'all' || activeTab === 'syntax') && bookmarkedSyntax.length > 0 && (
-            <div>
-              <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-3)' }}>
-                Bookmarked Syntax Sections ({bookmarkedSyntax.length})
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                {bookmarkedSyntax.map((sec: SyntaxSection) => (
-                  <div
-                    key={sec.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: 'var(--space-3) var(--space-4)',
-                      backgroundColor: 'var(--bg-surface)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-default)'
-                    }}
-                  >
-                    <div
-                      onClick={() => onNavigate(`/reference?section=${sec.id}`)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer', flex: 1, minWidth: 0 }}
-                    >
-                      <Code2 size={16} color="var(--accent-gold)" />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          #{sec.id}) {sec.title}
-                        </div>
-                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                          {sec.category}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSyntaxBookmark(sec.id)}
-                        title="Remove bookmark"
-                        style={{ color: 'var(--text-muted)', padding: '6px' }}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onNavigate(`/reference?section=${sec.id}`)}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '6px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          backgroundColor: 'var(--bg-surface-raised)',
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 500,
-                          color: 'var(--text-primary)'
-                        }}
-                      >
-                        <span>View</span>
-                        <ArrowRight size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {(activeTab === 'all' || activeTab === 'syntax') && bookmarkedSyntax.length > 0 && (
+                <section className="bookmark-section" aria-labelledby="bookmarked-syntax-heading">
+                  <h2 id="bookmarked-syntax-heading">
+                    Bookmarked Syntax Sections <span>{bookmarkedSyntax.length}</span>
+                  </h2>
+                  <ul className="bookmark-list">
+                    {bookmarkedSyntax.map((section) => (
+                      <li className="bookmark-row bookmark-row--syntax" key={section.id}>
+                        <button
+                          type="button"
+                          className="bookmark-row__open"
+                          aria-label={`Open Syntax Section ${section.id}: ${section.title}`}
+                          onClick={() => onNavigate(`/reference?section=${section.id}`)}
+                        >
+                          <Code2 className="bookmark-row__icon" size={18} aria-hidden="true" />
+                          <span className="bookmark-row__content">
+                            <span className="bookmark-row__title">
+                              <bdi>Section {section.id}</bdi> — <bdi>{section.title}</bdi>
+                            </span>
+                            <span className="bookmark-row__meta"><bdi>{section.category}</bdi></span>
+                          </span>
+                          <ArrowRight className="bookmark-row__arrow" size={16} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="bookmark-row__remove"
+                          aria-label={`Remove Syntax Section ${section.id} bookmark`}
+                          title="Remove bookmark"
+                          onClick={() => handleRemoveSyntaxBookmark(section.id)}
+                        >
+                          <Trash2 size={17} aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
             </div>
           )}
         </div>

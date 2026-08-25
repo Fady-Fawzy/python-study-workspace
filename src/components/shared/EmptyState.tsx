@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 interface EmptyStateProps {
@@ -16,59 +16,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   actionText,
   onAction
 }) => {
+  const titleId = useId();
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-12) var(--space-6)',
-        textAlign: 'center',
-        backgroundColor: 'var(--bg-surface)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px dashed var(--border-default)',
-        margin: 'var(--space-6) 0'
-      }}
-    >
-      <div
-        style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: 'var(--radius-full)',
-          backgroundColor: 'var(--bg-surface-raised)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--text-muted)',
-          marginBottom: 'var(--space-4)'
-        }}
-      >
+    <section className="empty-state" aria-labelledby={titleId}>
+      <span className="empty-state__icon" aria-hidden="true">
         <Icon size={22} strokeWidth={1.75} />
+      </span>
+      <div className="empty-state__copy" role="status">
+        <h2 id={titleId} className="empty-state__title">{title}</h2>
+        <p className="empty-state__description">{description}</p>
       </div>
-      <h3 style={{ fontSize: 'var(--text-md)', marginBottom: 'var(--space-2)' }}>
-        {title}
-      </h3>
-      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', maxWidth: '380px', marginBottom: actionText ? 'var(--space-4)' : 0 }}>
-        {description}
-      </p>
       {actionText && onAction && (
-        <button
-          type="button"
-          onClick={onAction}
-          style={{
-            padding: 'var(--space-2) var(--space-4)',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#ffffff',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: 500,
-            fontSize: 'var(--text-sm)',
-            transition: 'background var(--transition-fast)'
-          }}
-        >
+        <button type="button" className="empty-state__action" onClick={onAction}>
           {actionText}
         </button>
       )}
-    </div>
+    </section>
   );
 };
