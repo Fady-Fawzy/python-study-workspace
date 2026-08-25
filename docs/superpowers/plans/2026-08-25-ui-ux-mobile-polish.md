@@ -121,21 +121,21 @@
 
 - [x] Run an independent whole-branch spec/code-quality review.
 - [x] Audit semantics, labels, heading order, focus-visible, keyboard operation, contrast, reduced motion, touch targets, safe areas, and body-lock cleanup.
-- [ ] Audit document `scrollWidth` vs `clientWidth` at 320, 375, 430, 768, 1024, and 1440 across dashboard, both lesson modes, long code/table/callout pages, reference, bookmarks, notes, search, drawer, TOC, and backup.
-- [ ] Audit representative routes in dark and light themes and correct only reproducible findings.
+- [x] Attempt document `scrollWidth` vs `clientWidth` audit at 320, 375, 430, 768, 1024, and 1440; exact browser geometry remained environment-blocked (cloud Pages access denied and no local browser executable), so responsive contracts were covered by focused DOM/CSS review and tests instead.
+- [x] Attempt representative dark/light route audit; exact interactive browser evidence remained environment-blocked, with theme-token/contrast behavior covered by static review and regression tests.
 - [x] Re-review fixes and record code/static evidence plus browser limitations.
 
 ### Task 10: Final verification, publish, CI/Pages, and production QA
 
 **Files:** only verified release fixes; ledger updates.
 
-- [ ] Run `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test:run`, `npm run build`, and `git diff --check`.
-- [ ] Review complete `origin/main...HEAD` diff and confirm no unrelated changes.
-- [ ] Confirm frozen-content diffs are empty and Summary/Quick Review educational content is unchanged.
-- [ ] Push `codex/ui-ux-mobile-polish` without force, inspect remote branch/CI, and fix reproducible failures.
-- [ ] Integrate into latest `main` without history rewrite, push, inspect GitHub Actions and Pages deployment.
-- [ ] Verify the deployed live site at representative routes/themes/widths; record exact evidence or environment blocker.
-- [ ] Mark every ledger task complete with final commit SHAs and verification results.
+- [x] Run `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test:run`, `npm run build`, and `git diff --check`.
+- [x] Review complete `origin/main...HEAD` diff and confirm no unrelated changes.
+- [x] Confirm frozen-content diffs are empty and Summary/Quick Review educational content is unchanged.
+- [x] Push `codex/ui-ux-mobile-polish` without force, inspect remote branch/CI, and fix reproducible failures.
+- [x] Integrate into latest `main` without history rewrite, push, inspect GitHub Actions and Pages deployment.
+- [x] Verify the deployed live endpoint and asset hashes; exact interactive route/theme/viewport evidence remained environment-blocked and is recorded above.
+- [x] Mark every ledger task complete with final commit SHAs and verification results.
 
 ---
 
@@ -151,25 +151,25 @@
 | 6. Syntax Reference | Complete | `task6_syntax_reference_impl` | Approved by `task6_syntax_reference_review` | `fddabdf` | TDD red 5/5 → focused green; full 106/106; typecheck/lint/build/diff-check pass. All syntax content frozen and section rendering preserved. |
 | 7. Bookmarks/Notes views | Complete | `task7_saved_views_impl` | Approved after fix by `task7_saved_views_review` | `2fea194`, `0473708` | TDD red 12/12 → focused 14/14; full 120/120; typecheck/lint/build/diff-check pass. Valid mobile search labelling, 16px input, and tab keyboard coverage added. |
 | 8. Search/backup overlays | Complete | `task8_search_backup_impl` | Approved after fix by `task8_search_backup_review` | `b2e77e4`, `fe513a1` | TDD red 14 failures → focused reviewer 46/46; full 150/150; typecheck/lint/build/diff-check pass. Backup arrays rejected without overwrite; overlay/session races and ARIA structure fixed. |
-| 9. Whole-branch QA | Code/static complete; browser blocked | `task9_branch_fixes_impl` | Approved after fix by `task9_whole_branch_review` | `7b31d26` | Review found 7 issues; all fixed/re-reviewed. Focused 34/34; full 155/155; typecheck/lint/build/diff-check pass. Exact viewport/theme/scrollWidth evidence blocked: cloud Pages access denied and no local browser executable. |
-| 10. Publish/production | Pending | Pending | Pending | Pending | |
+| 9. Whole-branch QA | Complete with recorded browser limitation | `task9_branch_fixes_impl` | Approved after fix by `task9_whole_branch_review` | `7b31d26` | Review found 7 issues; all fixed/re-reviewed. Focused 34/34; full 155/155; typecheck/lint/build/diff-check pass. Exact viewport/theme/scrollWidth evidence blocked: cloud Pages access denied and no local browser executable. |
+| 10. Publish/production | Complete | Primary session | CI and Pages green | feature `7b646e7`; main `9cf0e3a`; PR #1 | Feature pushed without force; CI run 1 passed; squash merged to `main`; Pages run 5 passed; live JS/CSS asset hashes and HTTP 200 responses match the production build. |
 
 ## Final evidence checklist
 
-- [ ] `git diff origin/main -- elzero_python_lessons_20_to_74.md`
-- [ ] `git diff origin/main -- python_syntax_reference_elzero_20_74.md`
-- [ ] `git diff origin/main -- src/content/detailed`
-- [ ] Summary source unchanged
-- [ ] Quick Review educational source/meaning unchanged
-- [ ] `npm ci`
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run test:run`
-- [ ] `npm run build`
-- [ ] `git diff --check`
-- [ ] responsive/theme/browser evidence
-- [ ] feature branch pushed
-- [ ] `main` integrated/pushed
-- [ ] CI green
-- [ ] Pages green
-- [ ] live site verified
+- [x] `git diff origin/main -- elzero_python_lessons_20_to_74.md`
+- [x] `git diff origin/main -- python_syntax_reference_elzero_20_74.md`
+- [x] `git diff origin/main -- src/content/detailed`
+- [x] Summary source unchanged
+- [x] Quick Review educational source/meaning unchanged
+- [x] `npm ci`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run test:run`
+- [x] `npm run build`
+- [x] `git diff --check`
+- [x] responsive/theme code and test evidence; exact browser viewport evidence blocker recorded
+- [x] feature branch pushed
+- [x] `main` integrated/pushed
+- [x] CI green
+- [x] Pages green
+- [x] live endpoint and production assets verified
