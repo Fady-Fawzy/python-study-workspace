@@ -1848,15 +1848,15 @@ p {
   padding-block-start: max(var(--space-6), var(--safe-area-top));
 }
 
-.app-shell--full-view .lesson-header__topline {
-  position: sticky;
-  top: var(--safe-area-top);
-  z-index: var(--z-sticky);
-  margin-block-start: calc(var(--space-2) * -1);
-  padding-block: var(--space-2);
-  border-block-end: 1px solid var(--border-subtle);
-  background-color: var(--bg-app);
-  box-shadow: 0 8px 18px -18px var(--text-primary);
+.app-shell--full-view .lesson-full-view-toggle {
+  position: fixed;
+  inset-block-start: calc(var(--safe-area-top) + var(--space-3));
+  inset-inline-end: max(
+    var(--page-gutter-compact),
+    calc((100vw - var(--content-wide-max-width)) / 2 + var(--page-gutter))
+  );
+  z-index: var(--z-navigation);
+  box-shadow: var(--shadow-md);
 }
 
 .app-shell--full-view .lesson-layout {

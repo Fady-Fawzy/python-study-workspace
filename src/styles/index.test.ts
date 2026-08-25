@@ -26,7 +26,7 @@ describe('markdown styling contracts', () => {
 
   it('keeps the Full View escape control reachable during long reading sessions', () => {
     expect(stylesheet).toMatch(
-      /\.app-shell--full-view\s+\.lesson-header__topline\s*\{[^}]*position:\s*sticky;[^}]*top:\s*var\(--safe-area-top\);/s
+      /\.app-shell--full-view\s+\.lesson-full-view-toggle\s*\{[^}]*position:\s*fixed;[^}]*inset-block-start:\s*calc\(var\(--safe-area-top\) \+ var\(--space-3\)\);/s
     );
   });
 });
