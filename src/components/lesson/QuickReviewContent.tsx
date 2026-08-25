@@ -2,6 +2,7 @@ import React from 'react';
 import { marked } from 'marked';
 import { ArrowUpRight, Zap } from 'lucide-react';
 import { SyntaxSection } from '../../types/content';
+import { getQuickReviewPurpose } from '../../lib/quickReview';
 import { CodeBlock } from '../code/CodeBlock';
 
 interface QuickReviewContentProps {
@@ -75,6 +76,7 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
           <div className="quick-review-card__body">
             {sec.subsections.map(sub => {
               const hasDescription = Boolean(sub.content.trim());
+              const purpose = hasDescription ? null : getQuickReviewPurpose(sub);
               const isExample = isExampleHeading(sub.heading);
 
               return (
@@ -84,14 +86,20 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
                     <h3 dir="ltr">{getEntryTitle(sub.heading)}</h3>
                   </header>
 
-                  {hasDescription && (
+                  {(hasDescription || purpose) && (
                     <div className="quick-review-entry__detail">
                       <span className="quick-review-entry__label">What it does</span>
-                      <div
-                        dir="ltr"
-                        className="quick-review-subsection__content prose-text"
-                        dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
-                      />
+                      {hasDescription ? (
+                        <div
+                          dir="ltr"
+                          className="quick-review-subsection__content prose-text"
+                          dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
+                        />
+                      ) : (
+                        <p dir="ltr" className="quick-review-subsection__content prose-text">
+                          {purpose}
+                        </p>
+                      )}
                     </div>
                   )}
 
