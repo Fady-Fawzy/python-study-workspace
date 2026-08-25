@@ -51,7 +51,7 @@ Ahmed
     expect(lesson.blocks.some(block => block.type === 'output')).toBe(true);
     expect(lesson.toc.map(item => item.text)).toEqual(expect.arrayContaining([
       expect.stringContaining('Addition'),
-      expect.stringContaining('Floor Division')
+      expect.stringContaining('Floor division')
     ]));
 
     const source = lesson.rawMarkdown;
@@ -184,7 +184,7 @@ Ahmed
       expect(lesson.blocks.some(block => block.type === 'code')).toBe(true);
       expect(lesson.blocks.some(block => block.type === 'output' || block.type === 'example-output')).toBe(true);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
     }
   });
 
@@ -224,7 +224,7 @@ Ahmed
       const lesson = parseDetailedLesson(readDetailedSource(id), id);
       expect(lesson.id).toBe(id);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
       if (Number(id) >= 38) {
         expect(lesson.blocks.some(block => block.type === 'example-run')).toBe(true);
       } else {
@@ -246,7 +246,7 @@ Ahmed
     for (const [id, topics] of Object.entries(expectedTopics)) {
       const lesson = parseDetailedLesson(readDetailedSource(id), id);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
       expect(lesson.blocks.some(block => block.type === 'output' || block.type === 'example-run')).toBe(true);
     }
   });
@@ -267,7 +267,7 @@ Ahmed
     for (const [id, topics] of Object.entries(expectedTopics)) {
       const lesson = parseDetailedLesson(readDetailedSource(id), id);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
       expect(lesson.blocks.some(block => ['output', 'example-run'].includes(block.type))).toBe(true);
     }
   });
@@ -288,7 +288,7 @@ Ahmed
     for (const [id, topics] of Object.entries(expectedTopics)) {
       const lesson = parseDetailedLesson(readDetailedSource(id), id);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
       expect(lesson.blocks.some(block => block.type === 'output')).toBe(true);
     }
   });
@@ -304,7 +304,7 @@ Ahmed
     for (const [id, topics] of Object.entries(expectedTopics)) {
       const lesson = parseDetailedLesson(readDetailedSource(id), id);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
       expect(lesson.blocks.some(block => block.type === 'code')).toBe(true);
       if (id !== '065') {
         expect(lesson.blocks.some(block => block.type === 'example-output' || block.type === 'output')).toBe(true);
@@ -325,7 +325,7 @@ Ahmed
     for (const [id, topics] of Object.entries(expectedTopics)) {
       const lesson = parseDetailedLesson(readDetailedSource(id), id);
       expect(lesson.toc.length).toBeGreaterThan(1);
-      for (const topic of topics) expect(lesson.rawMarkdown).toContain(topic);
+      for (const topic of topics) expect(lesson.rawMarkdown.toLowerCase()).toContain(topic.toLowerCase());
       expect(lesson.blocks.some(block => block.type === 'output')).toBe(true);
     }
   });

@@ -53,7 +53,7 @@ Ahmed
     expect(html).toContain('<pre dir="ltr"><code dir="ltr">');
   });
 
-  it('isolates inline Python identifiers inside RTL explanations', () => {
+  it('isolates inline Python identifiers inside English explanations', () => {
     const lesson = parseDetailedLesson(`# 038 — Inline code
 
 ## مثال
@@ -62,7 +62,7 @@ Ahmed
 `, '038');
     const html = renderToStaticMarkup(<DetailedLessonContent lesson={lesson} />);
 
-    expect(html).toContain('class="detailed-markdown arabic-text" dir="auto"');
+    expect(html).toContain('class="detailed-markdown prose-text" dir="ltr"');
     expect(html).toContain('<code class="inline-code" dir="ltr">append()</code>');
   });
 

@@ -1,8 +1,8 @@
 # Python Syntax Reference — Elzero Lessons 20 → 74
 
-> مرجع عملي سريع ومكثف لأهم الـSyntax المستخدمة من الفيديو 20 إلى 74 في كورس Mastering Python.
+> A compact practical reference for the most important syntax used in lessons 20 to 74 of the Mastering Python course.
 >
-> الهدف: تستخدم الملف كـ **Cheat Sheet / Quick Reference** أثناء المذاكرة والكتابة في VS Code.
+> Goal: use this file as a **Cheat Sheet / Quick Reference** while studying and writing in VS Code.
 
 ---
 
@@ -18,7 +18,7 @@ a % b     # Modulus / Remainder
 a ** b    # Exponent / Power
 ```
 
-## أمثلة
+## Examples
 
 ```python
 print(10 + 5)    # 15
@@ -30,14 +30,14 @@ print(10 % 3)    # 1
 print(2 ** 3)    # 8
 ```
 
-## أولوية العمليات
+## Operator precedence
 
 ```python
 result = 5 + 10 * 2
-# الضرب قبل الجمع
+# Multiplication before addition
 ```
 
-استخدم الأقواس لتحديد الأولوية:
+Use parentheses to define the order:
 
 ```python
 result = (5 + 10) * 2
@@ -47,7 +47,7 @@ result = (5 + 10) * 2
 
 # 2) Lists
 
-## إنشاء List
+## Creating a List
 
 ```python
 items = [1, 2, 3, "Python", True]
@@ -69,7 +69,7 @@ items[start:end]
 items[start:end:step]
 ```
 
-أمثلة:
+Examples:
 
 ```python
 items[1:4]
@@ -79,15 +79,15 @@ items[::2]
 items[::-1]
 ```
 
-> `end` غير مشمول.
+> `end` is excluded.
 
-## تعديل عنصر
+## Updating an item
 
 ```python
 items[0] = "New Value"
 ```
 
-## تعديل Slice
+## Updating a slice
 
 ```python
 items[1:3] = ["A", "B"]
@@ -99,7 +99,7 @@ items[1:3] = ["A", "B"]
 
 ## append()
 
-إضافة عنصر واحد في النهاية:
+Add one item at the end:
 
 ```python
 items.append("Python")
@@ -107,7 +107,7 @@ items.append("Python")
 
 ## extend()
 
-إضافة عناصر Iterable:
+Add iterable items:
 
 ```python
 items.extend([4, 5, 6])
@@ -115,7 +115,7 @@ items.extend([4, 5, 6])
 
 ## remove()
 
-يحذف أول قيمة مطابقة:
+Remove the first matching value:
 
 ```python
 items.remove("Python")
@@ -130,7 +130,7 @@ numbers.sort(reverse=True)
 
 ## reverse()
 
-يعكس ترتيب العناصر:
+Reverse item order:
 
 ```python
 items.reverse()
@@ -166,7 +166,7 @@ items.index("Python")
 items.insert(index, value)
 ```
 
-مثال:
+Example:
 
 ```python
 items.insert(0, "Start")
@@ -179,7 +179,7 @@ items.pop()
 items.pop(2)
 ```
 
-ويرجع العنصر المحذوف:
+And return the deleted item:
 
 ```python
 deleted = items.pop(2)
@@ -189,25 +189,25 @@ deleted = items.pop(2)
 
 # 4) Tuples
 
-## إنشاء Tuple
+## Creating a Tuple
 
 ```python
 data = (1, 2, 3)
 ```
 
-أو:
+Or:
 
 ```python
 data = 1, 2, 3
 ```
 
-## Tuple بعنصر واحد
+## One-item Tuple
 
 ```python
 data = ("Python",)
 ```
 
-النقطة المهمة هي الفاصلة:
+The important point is the comma:
 
 ```python
 ("Python",)
@@ -220,7 +220,7 @@ data[0]
 data[-1]
 ```
 
-## Tuple غير قابلة للتعديل
+## Immutable Tuple
 
 ```python
 # data[0] = 100
@@ -260,7 +260,7 @@ data.index(3)
 name, age, country = ("Ahmed", 25, "Egypt")
 ```
 
-تجاهل قيمة:
+Ignore a value:
 
 ```python
 name, _, country = ("Ahmed", 25, "Egypt")
@@ -270,13 +270,13 @@ name, _, country = ("Ahmed", 25, "Egypt")
 
 # 5) Sets
 
-## إنشاء Set
+## Creating a Set
 
 ```python
 numbers = {1, 2, 3}
 ```
 
-## خصائص مهمة
+## Important properties
 
 - Unordered
 - Unique Values
@@ -314,7 +314,7 @@ new_set = numbers.copy()
 numbers.remove(2)
 ```
 
-> يعمل Error لو العنصر غير موجود.
+> Raises an error if the item is missing.
 
 ## discard()
 
@@ -322,7 +322,7 @@ numbers.remove(2)
 numbers.discard(2)
 ```
 
-> لا يعمل Error لو العنصر غير موجود.
+> Does not raise an error if the item is missing.
 
 ## pop()
 
@@ -342,7 +342,7 @@ numbers.update([4, 5, 6])
 
 ## difference()
 
-العناصر الموجودة في `a` وغير الموجودة في `b`:
+Items in `a` that are not in `b`:
 
 ```python
 a.difference(b)
@@ -351,7 +351,7 @@ a - b
 
 ## difference_update()
 
-يعدل `a` نفسها:
+Changes `a` itself:
 
 ```python
 a.difference_update(b)
@@ -359,7 +359,7 @@ a.difference_update(b)
 
 ## intersection()
 
-العناصر المشتركة:
+Shared items:
 
 ```python
 a.intersection(b)
@@ -374,7 +374,7 @@ a.intersection_update(b)
 
 ## symmetric_difference()
 
-العناصر غير المشتركة:
+Items that are not shared:
 
 ```python
 a.symmetric_difference(b)
@@ -393,7 +393,7 @@ a.symmetric_difference_update(b)
 a.issuperset(b)
 ```
 
-هل `a` تحتوي كل عناصر `b`؟
+Does `a` contain every item in `b`?
 
 ## issubset()
 
@@ -401,7 +401,7 @@ a.issuperset(b)
 a.issubset(b)
 ```
 
-هل `a` جزء من `b`؟
+Is `a` a part of `b`?
 
 ## isdisjoint()
 
@@ -409,13 +409,13 @@ a.issubset(b)
 a.isdisjoint(b)
 ```
 
-هل لا يوجد أي عنصر مشترك؟
+Are there no shared items?
 
 ---
 
 # 7) Dictionaries
 
-## إنشاء Dictionary
+## Creating a Dictionary
 
 ```python
 user = {
@@ -431,20 +431,20 @@ user = {
 user["name"]
 ```
 
-أو:
+Or:
 
 ```python
 user.get("name")
 ```
 
-## الفرق بين [] و get()
+## Difference between [] and get()
 
 ```python
 user["missing"]
 # KeyError
 ```
 
-لكن:
+But:
 
 ```python
 user.get("missing")
@@ -457,7 +457,7 @@ user.get("missing")
 user["skill"] = "Python"
 ```
 
-أو:
+Or:
 
 ```python
 user.update({"skill": "Python"})
@@ -526,7 +526,7 @@ user.items()
 user.setdefault("country", "Egypt")
 ```
 
-لو الـKey موجود يرجع قيمته، ولو مش موجود يضيفه.
+If the key exists, return its value; if it is missing, add it.
 
 ## popitem()
 
@@ -534,7 +534,7 @@ user.setdefault("country", "Egypt")
 user.popitem()
 ```
 
-يحذف ويرجع آخر Key/Value Pair.
+Remove and return the last key/value pair.
 
 ## fromkeys()
 
@@ -548,7 +548,7 @@ user = dict.fromkeys(keys, "Unknown")
 
 # 9) Boolean
 
-القيم:
+Values:
 
 ```python
 True
@@ -561,7 +561,7 @@ False
 bool(value)
 ```
 
-### غالبًا Truthy
+### Usually Truthy
 
 ```python
 bool("Python")
@@ -569,7 +569,7 @@ bool(100)
 bool([1, 2])
 ```
 
-### غالبًا Falsy
+### Usually Falsy
 
 ```python
 bool("")
@@ -587,7 +587,7 @@ bool(False)
 
 ## and
 
-كل الشروط لازم True:
+All conditions must be True:
 
 ```python
 age >= 18 and country == "Egypt"
@@ -595,7 +595,7 @@ age >= 18 and country == "Egypt"
 
 ## or
 
-يكفي شرط واحد True:
+One True condition is enough:
 
 ```python
 age >= 18 or has_permission
@@ -603,7 +603,7 @@ age >= 18 or has_permission
 
 ## not
 
-يعكس النتيجة:
+Reverse the result:
 
 ```python
 not age > 18
@@ -625,13 +625,13 @@ x %= 3
 x **= 2
 ```
 
-مثال:
+Example:
 
 ```python
 x += 5
 ```
 
-نفس:
+Same as:
 
 ```python
 x = x + 5
@@ -650,61 +650,61 @@ a >= b
 a <= b
 ```
 
-## مهم
+## Important
 
 ```python
 x = 10
 ```
 
-دي Assignment.
+This is assignment.
 
 ```python
 x == 10
 ```
 
-دي Comparison.
+This is comparison.
 
 ---
 
 # 13) Type Conversion
 
-## إلى String
+## To String
 
 ```python
 str(value)
 ```
 
-## إلى Integer
+## To Integer
 
 ```python
 int(value)
 ```
 
-## إلى Float
+## To Float
 
 ```python
 float(value)
 ```
 
-## إلى List
+## To List
 
 ```python
 list(value)
 ```
 
-## إلى Tuple
+## To Tuple
 
 ```python
 tuple(value)
 ```
 
-## إلى Set
+## To Set
 
 ```python
 set(value)
 ```
 
-مثال:
+Example:
 
 ```python
 number = int("100")
@@ -720,7 +720,7 @@ number = int("100")
 name = input("Enter Your Name: ")
 ```
 
-> `input()` يرجع String دائمًا.
+> `input()` always returns a String.
 
 ## Input + Conversion
 
@@ -744,7 +744,7 @@ name = input("Name: ").strip().capitalize()
 text.strip()
 ```
 
-يحذف المسافات من البداية والنهاية.
+Remove leading and trailing spaces.
 
 ## lower()
 
@@ -770,7 +770,7 @@ text.capitalize()
 text.index("@")
 ```
 
-يرجع موقع القيمة.
+Return the value's position.
 
 ## Slicing
 
@@ -778,7 +778,7 @@ text.index("@")
 text[start:end]
 ```
 
-مثال:
+Example:
 
 ```python
 email = "ahmed@gmail.com"
@@ -803,7 +803,7 @@ else:
     code
 ```
 
-مثال:
+Example:
 
 ```python
 age = 20
@@ -815,7 +815,7 @@ else:
     print("Minor")
 ```
 
-## أكثر من elif
+## Multiple elif branches
 
 ```python
 if score >= 90:
@@ -835,23 +835,23 @@ else:
 
 # 17) Indentation
 
-Python تعتمد على الـIndentation.
+Python relies on indentation.
 
-صح:
+Correct:
 
 ```python
 if True:
     print("Hello")
 ```
 
-خطأ:
+Incorrect:
 
 ```python
 # if True:
 # print("Hello")
 ```
 
-أفضل ممارسة:
+Best practice:
 
 ```text
 4 spaces
@@ -874,7 +874,7 @@ else:
     code
 ```
 
-مثال:
+Example:
 
 ```python
 if age >= 18:
@@ -890,19 +890,19 @@ if age >= 18:
 
 # 19) Ternary Conditional Operator
 
-الشكل:
+Form:
 
 ```python
 value_if_true if condition else value_if_false
 ```
 
-مثال:
+Example:
 
 ```python
 status = "Adult" if age >= 18 else "Minor"
 ```
 
-أو:
+Or:
 
 ```python
 print("Allowed" if age >= 18 else "Not Allowed")
@@ -917,26 +917,26 @@ in
 not in
 ```
 
-أمثلة:
+Examples:
 
 ```python
 "Ahmed" in friends
 "Omar" not in friends
 ```
 
-مع String:
+With a String:
 
 ```python
 "P" in "Python"
 ```
 
-مع Dictionary:
+With a Dictionary:
 
 ```python
 "name" in user
 ```
 
-> في Dictionary يتم الفحص على الـKeys.
+> In a Dictionary, the check is performed on keys.
 
 ---
 
@@ -949,7 +949,7 @@ while condition:
     code
 ```
 
-مثال:
+Example:
 
 ```python
 x = 0
@@ -971,7 +971,7 @@ else:
 
 ## Infinite Loop
 
-لو الشرط عمره ما يبقى False:
+If the condition never becomes False:
 
 ```python
 # x = 0
@@ -979,7 +979,7 @@ else:
 #     print(x)
 ```
 
-لأن `x` لم تتغير.
+Because `x` did not change.
 
 ---
 
@@ -992,14 +992,14 @@ for item in iterable:
     code
 ```
 
-مثال:
+Example:
 
 ```python
 for name in ["Ahmed", "Ali", "Omar"]:
     print(name)
 ```
 
-مع String:
+With a String:
 
 ```python
 for letter in "Python":
@@ -1027,7 +1027,7 @@ for item in items:
         code
 ```
 
-مثال:
+Example:
 
 ```python
 for person in people:
@@ -1042,7 +1042,7 @@ for person in people:
 
 ## break
 
-يوقف الـLoop بالكامل:
+Stop the entire loop:
 
 ```python
 for number in numbers:
@@ -1053,7 +1053,7 @@ for number in numbers:
 
 ## continue
 
-يتخطى الدورة الحالية:
+Skip the current cycle:
 
 ```python
 for number in numbers:
@@ -1115,7 +1115,7 @@ Call:
 function_name()
 ```
 
-مثال:
+Example:
 
 ```python
 def say_hello():
@@ -1133,7 +1133,7 @@ def function_name():
     return value
 ```
 
-مثال:
+Example:
 
 ```python
 def add():
@@ -1142,19 +1142,19 @@ def add():
 result = add()
 ```
 
-## الفرق بين print و return
+## Difference between print and return
 
 ```python
 print(value)
 ```
 
-يعرض القيمة.
+Displays the value.
 
 ```python
 return value
 ```
 
-يرجع القيمة من الـFunction.
+Returns the value from the function.
 
 ---
 
@@ -1177,7 +1177,7 @@ say_hello("Ahmed")
 
 `"Ahmed"` = Argument.
 
-## أكثر من Parameter
+## Multiple parameters
 
 ```python
 def user_info(name, age, country):
@@ -1204,18 +1204,18 @@ say_hello()
 say_hello("Ahmed")
 ```
 
-## قاعدة مهمة
+## Important rule
 
-Required Parameters قبل Default Parameters:
+Required parameters before default parameters:
 
-صح:
+Correct:
 
 ```python
 def user_info(name, age=20):
     pass
 ```
 
-خطأ:
+Incorrect:
 
 ```python
 # def user_info(name="Unknown", age):
@@ -1226,7 +1226,7 @@ def user_info(name, age=20):
 
 # 30) *args
 
-يجمع Positional Arguments داخل Tuple:
+Packs positional arguments into a Tuple:
 
 ```python
 def show_names(*names):
@@ -1239,7 +1239,7 @@ Call:
 show_names("Ahmed", "Ali", "Omar")
 ```
 
-النتيجة:
+Result:
 
 ```python
 ("Ahmed", "Ali", "Omar")
@@ -1275,7 +1275,7 @@ Call:
 show_skills(*skills)
 ```
 
-تعادل:
+Equivalent to:
 
 ```python
 show_skills(
@@ -1289,7 +1289,7 @@ show_skills(
 
 # 32) **kwargs
 
-يجمع Keyword Arguments داخل Dictionary:
+Packs keyword arguments into a Dictionary:
 
 ```python
 def show_data(**data):
@@ -1371,7 +1371,7 @@ def test():
     x = 50
 ```
 
-الـ`x` داخل Function مختلفة عن الخارجية.
+The `x` inside the function is different from the outer one.
 
 ## global
 
@@ -1384,13 +1384,13 @@ def change():
     x = 500
 ```
 
-بعدها `x` الخارجية أصبحت `500`.
+Afterward, the outer `x` becomes `500`.
 
 ---
 
 # 36) Recursion
 
-Function تنادي نفسها:
+The function calls itself:
 
 ```python
 def countdown(number):
@@ -1405,7 +1405,7 @@ def countdown(number):
 
 ## Base Case
 
-لازم يكون فيه شرط يوقف الـRecursion:
+There must be a condition that stops recursion:
 
 ```python
 if number == 0:
@@ -1422,7 +1422,7 @@ if number == 0:
 lambda arguments: expression
 ```
 
-مثال:
+Example:
 
 ```python
 add = lambda a, b: a + b
@@ -1434,7 +1434,7 @@ Call:
 print(add(10, 20))
 ```
 
-Equivalent تقريبًا:
+Approximately equivalent to:
 
 ```python
 def add(a, b):
@@ -1451,7 +1451,7 @@ def add(a, b):
 file = open("filename.txt", "mode")
 ```
 
-## أشهر Modes
+## Common modes
 
 ```text
 r  Read
@@ -1460,7 +1460,7 @@ a  Append
 x  Create
 ```
 
-أمثلة:
+Examples:
 
 ```python
 file = open("data.txt", "r")
@@ -1479,7 +1479,7 @@ file = open("data.txt", "x")
 file.read()
 ```
 
-عدد Characters:
+Number of characters:
 
 ```python
 file.read(10)
@@ -1497,9 +1497,9 @@ file.readline()
 file.readlines()
 ```
 
-ترجع List من الأسطر.
+Returns a List of lines.
 
-## Loop على File
+## Loop over a file
 
 ```python
 for line in file:
@@ -1556,11 +1556,11 @@ file.write("New Line\n")
 file.close()
 ```
 
-الفرق:
+Difference:
 
 ```text
-w -> يكتب من البداية وقد يمسح القديم
-a -> يضيف في النهاية
+w -> writes from the beginning and may erase old content
+a -> adds at the end
 ```
 
 ---
@@ -1569,7 +1569,7 @@ a -> يضيف في النهاية
 
 ## tell()
 
-يعرفك مكان الـCursor:
+Tells you the cursor position:
 
 ```python
 file.tell()
@@ -1577,19 +1577,19 @@ file.tell()
 
 ## seek()
 
-ينقل الـCursor:
+Moves the cursor:
 
 ```python
 file.seek(position)
 ```
 
-مثال:
+Example:
 
 ```python
 file.seek(0)
 ```
 
-يرجعه للبداية.
+Moves it back to the beginning.
 
 ## truncate()
 
@@ -1597,7 +1597,7 @@ file.seek(0)
 file.truncate(size)
 ```
 
-يقص حجم الملف.
+Truncates the file size.
 
 ---
 
@@ -1609,7 +1609,7 @@ import os
 os.remove("data.txt")
 ```
 
-يحذف الملف.
+Deletes the file.
 
 ---
 
@@ -1619,7 +1619,7 @@ os.remove("data.txt")
 all(iterable)
 ```
 
-ترجع `True` لو كل العناصر Truthy.
+Returns `True` if every item is Truthy.
 
 ```python
 all([1, 2, 3])
@@ -1639,7 +1639,7 @@ all([1, 0, 3])
 any(iterable)
 ```
 
-ترجع `True` لو عنصر واحد على الأقل Truthy.
+Returns `True` if at least one item is Truthy.
 
 ```python
 any([0, False, "", 10])
@@ -1654,7 +1654,7 @@ any([0, False, "", 10])
 bin(number)
 ```
 
-مثال:
+Example:
 
 ```python
 bin(10)
@@ -1669,7 +1669,7 @@ bin(10)
 id(object)
 ```
 
-مثال:
+Example:
 
 ```python
 x = 100
@@ -1685,7 +1685,7 @@ print(id(x))
 sum(iterable)
 ```
 
-مثال:
+Example:
 
 ```python
 sum([10, 20, 30])
@@ -1705,13 +1705,13 @@ sum([10, 20, 30], 100)
 round(number)
 ```
 
-عدد Decimal Places:
+Number of decimal places:
 
 ```python
 round(number, digits)
 ```
 
-مثال:
+Example:
 
 ```python
 round(10.5678, 2)
@@ -1751,7 +1751,7 @@ range(start, stop, step)
 range(0, 20, 2)
 ```
 
-غالبًا:
+Usually:
 
 ```python
 for number in range(10):
@@ -1783,7 +1783,7 @@ print("Python")
 abs(number)
 ```
 
-مثال:
+Example:
 
 ```python
 abs(-100)
@@ -1798,13 +1798,13 @@ abs(-100)
 pow(base, exponent)
 ```
 
-مثال:
+Example:
 
 ```python
 pow(2, 5)
 ```
 
-نفس:
+Same as:
 
 ```python
 2 ** 5
@@ -1818,13 +1818,13 @@ pow(2, 5)
 min(iterable)
 ```
 
-أو:
+Or:
 
 ```python
 min(a, b, c)
 ```
 
-مثال:
+Example:
 
 ```python
 min([10, 5, 20])
@@ -1838,7 +1838,7 @@ min([10, 5, 20])
 max(iterable)
 ```
 
-أو:
+Or:
 
 ```python
 max(a, b, c)
@@ -1848,13 +1848,13 @@ max(a, b, c)
 
 # 56) slice()
 
-إنشاء Slice Object:
+Create a slice object:
 
 ```python
 slice(start, stop, step)
 ```
 
-مثال:
+Example:
 
 ```python
 text = "Programming"
@@ -1874,7 +1874,7 @@ print(text[part])
 map(function, iterable)
 ```
 
-مثال:
+Example:
 
 ```python
 numbers = [1, 2, 3, 4]
@@ -1884,9 +1884,9 @@ result = map(lambda x: x * 2, numbers)
 print(list(result))
 ```
 
-الهدف:
+Goal:
 
-> تطبيق Function على كل عنصر.
+> Apply a function to every item.
 
 ---
 
@@ -1898,7 +1898,7 @@ print(list(result))
 filter(function, iterable)
 ```
 
-مثال:
+Example:
 
 ```python
 numbers = [1, 2, 3, 4, 5, 6]
@@ -1911,15 +1911,15 @@ result = filter(
 print(list(result))
 ```
 
-الهدف:
+Goal:
 
-> الاحتفاظ بالعناصر التي يرجع لها الشرط True.
+> Keep items for which the condition returns True.
 
 ---
 
 # 59) reduce()
 
-تحتاج Import:
+Requires an import:
 
 ```python
 from functools import reduce
@@ -1931,7 +1931,7 @@ from functools import reduce
 reduce(function, iterable)
 ```
 
-مثال:
+Example:
 
 ```python
 numbers = [1, 2, 3, 4]
@@ -1944,9 +1944,9 @@ result = reduce(
 print(result)
 ```
 
-الهدف:
+Goal:
 
-> تحويل مجموعة عناصر إلى قيمة واحدة.
+> Convert a group of items into one value.
 
 ---
 
@@ -1958,7 +1958,7 @@ print(result)
 map(function, iterable)
 ```
 
-يحوّل كل عنصر.
+Transforms every item.
 
 ## filter
 
@@ -1966,7 +1966,7 @@ map(function, iterable)
 filter(function, iterable)
 ```
 
-يختار عناصر.
+Selects items.
 
 ## reduce
 
@@ -1974,9 +1974,9 @@ filter(function, iterable)
 reduce(function, iterable)
 ```
 
-يختزل كل العناصر لقيمة واحدة.
+Reduces all items to one value.
 
-مثال سريع:
+Quick example:
 
 ```python
 numbers = [1, 2, 3, 4, 5]
@@ -1992,7 +1992,7 @@ reduced = reduce(lambda x, y: x + y, numbers)
 
 ---
 
-# 61) أهم Patterns لازم تحفظ شكلها
+# 61) Important patterns to remember
 
 ## Input → Clean → Convert
 
@@ -2098,18 +2098,18 @@ reduce(lambda x, y: expression, iterable)
 
 ---
 
-# 62) أشهر الأخطاء في المرحلة دي
+# 62) Common mistakes in this stage
 
-## نسيان النقطتين :
+## Forgetting the colon :
 
-خطأ:
+Incorrect:
 
 ```python
 # if age > 18
 #     print("Adult")
 ```
 
-صح:
+Correct:
 
 ```python
 if age > 18:
@@ -2118,7 +2118,7 @@ if age > 18:
 
 ---
 
-## Indentation غلط
+## Incorrect indentation
 
 ```python
 if True:
@@ -2127,16 +2127,16 @@ if True:
 
 ---
 
-## استخدام = بدل ==
+## Using = instead of ==
 
-خطأ:
+Incorrect:
 
 ```python
 # if age = 18:
 #     pass
 ```
 
-صح:
+Correct:
 
 ```python
 if age == 18:
@@ -2145,7 +2145,7 @@ if age == 18:
 
 ---
 
-## نسيان تحديث while
+## Forgetting to update while
 
 ```python
 x = 0
@@ -2157,7 +2157,7 @@ while x < 5:
 
 ---
 
-## نسيان return
+## Forgetting return
 
 ```python
 def add(a, b):
@@ -2166,15 +2166,15 @@ def add(a, b):
 
 ---
 
-## استخدام Key غير موجود بـ []
+## Using a missing key with []
 
 ```python
 user["missing"]
 ```
 
-ممكن يعمل `KeyError`.
+It may raise `KeyError`.
 
-الأكثر أمانًا:
+Safer:
 
 ```python
 user.get("missing")
@@ -2182,21 +2182,21 @@ user.get("missing")
 
 ---
 
-## remove() على عنصر غير موجود
+## remove() on a missing item
 
 ```python
 items.remove("Missing")
 ```
 
-قد يعمل Error.
+It may raise an error.
 
-في Set استخدم:
+For a Set, use:
 
 ```python
 items.discard("Missing")
 ```
 
-لو لا تريد Error.
+If you do not want an error.
 
 ---
 
@@ -2396,106 +2396,106 @@ result = reduce(lambda x, y: x + y, items)
 
 ---
 
-# 65) قاعدة مراجعة سريعة
+# 65) Quick review rule
 
-لو شفت:
+When you see:
 
 ```python
 []
 ```
 
-فكر في:
+Think of:
 
 ```text
 List / Index / Slicing
 ```
 
-لو شفت:
+When you see:
 
 ```python
 ()
 ```
 
-فكر في:
+Think of:
 
 ```text
-Tuple أو Function Call
+Tuple or function call
 ```
 
-لو شفت:
+When you see:
 
 ```python
 {}
 ```
 
-فكر في:
+Think of:
 
 ```text
-Set أو Dictionary
+Set or Dictionary
 ```
 
-لو شفت:
+When you see:
 
 ```python
 :
 ```
 
-بعد:
+After:
 
 ```text
 if / elif / else / while / for / def
 ```
 
-فأنت داخل Block يحتاج Indentation.
+you are inside a block that needs indentation.
 
-لو شفت:
+When you see:
 
 ```python
 *
 ```
 
-مع Function Arguments:
+with function arguments:
 
 ```python
 *args
 ```
 
-فكر في Positional Arguments.
+think of positional arguments.
 
-لو شفت:
+When you see:
 
 ```python
 **
 ```
 
-مع Function Arguments:
+with function arguments:
 
 ```python
 **kwargs
 ```
 
-فكر في Keyword Arguments.
+think of keyword arguments.
 
 ---
 
-# 66) Mental Model سريع
+# 66) Quick mental model
 
 ## List
 
 ```text
-مجموعة مرتبة وقابلة للتعديل
+An ordered, mutable collection
 ```
 
 ## Tuple
 
 ```text
-مجموعة مرتبة وغير قابلة للتعديل
+An ordered, immutable collection
 ```
 
 ## Set
 
 ```text
-مجموعة Unique وغير مرتبة
+A unique, unordered collection
 ```
 
 ## Dictionary
@@ -2507,25 +2507,25 @@ Key -> Value
 ## if
 
 ```text
-اتخاذ قرار
+Making a decision
 ```
 
 ## Loop
 
 ```text
-تكرار
+Repetition
 ```
 
 ## Function
 
 ```text
-إعادة استخدام منطق معين
+Reusing a piece of logic
 ```
 
 ## return
 
 ```text
-إخراج قيمة من Function
+Returning a value from a function
 ```
 
 ## map
@@ -2548,32 +2548,32 @@ Combine
 
 ---
 
-# 67) أفضل طريقة لاستخدام المرجع
+# 67) The best way to use this reference
 
-1. شوف الـSyntax العامة.
-2. اكتب مثال بنفسك بدون Copy/Paste.
-3. غيّر القيم.
-4. توقّع الناتج قبل Run.
-5. جرّب Error عمدًا وافهم سببه.
-6. ارجع للمرجع فقط لما تنسى شكل الـSyntax.
+1. Look at the general syntax.
+2. Write an example yourself without copy/paste.
+3. Change the values.
+4. Predict the output before running it.
+5. Trigger an error intentionally and understand why.
+6. Return to the reference only when you forget the syntax shape.
 
 ---
 
-# نهاية المرجع
+# End of reference
 
-يغطي هذا الملف الـSyntax الأساسية المستخدمة تقريبًا في دروس:
+This file covers the core syntax used approximately in lessons:
 
 ```text
 20 → 74
 ```
 
-من:
+From:
 
 ```text
 Arithmetic Operators
 ```
 
-حتى:
+To:
 
 ```text
 reduce()

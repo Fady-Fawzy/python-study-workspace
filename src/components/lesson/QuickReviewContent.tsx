@@ -53,23 +53,23 @@ export const QuickReviewContent: React.FC<QuickReviewContentProps> = ({
       {syntaxSections.map(sec => (
         <section key={sec.id} className="quick-review-card" aria-labelledby={`quick-review-${sec.id}`}>
           <header className="quick-review-card__header">
-            <h2 id={`quick-review-${sec.id}`} dir="auto">
+            <h2 id={`quick-review-${sec.id}`} dir="ltr">
               <bdi dir="ltr">#{sec.id})</bdi> {sec.title}
             </h2>
-            <span className="quick-review-card__category" dir="auto">{sec.category}</span>
+            <span className="quick-review-card__category" dir="ltr">{sec.category}</span>
           </header>
 
           <div className="quick-review-card__body">
             {sec.subsections.map(sub => (
               <div key={sub.id} className="quick-review-subsection">
                 {sub.heading && (
-                  <h3 dir="auto" className="arabic-text">{sub.heading}</h3>
+                  <h3 dir="ltr" className="prose-text">{sub.heading}</h3>
                 )}
 
                 {sub.content.trim() && (
                   <div
-                    dir="auto"
-                    className="quick-review-subsection__content arabic-text"
+                    dir="ltr"
+                    className="quick-review-subsection__content prose-text"
                     dangerouslySetInnerHTML={{ __html: renderFormattedHtml(sub.content) }}
                   />
                 )}

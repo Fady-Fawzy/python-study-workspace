@@ -171,7 +171,7 @@ export const SyntaxReferenceView: React.FC<SyntaxReferenceViewProps> = ({
                 <header className="syntax-section__header">
                   <div className="syntax-section__heading">
                     <span className="syntax-section__number">#{section.id}</span>
-                    <h2 id={titleId} dir="auto">
+                    <h2 id={titleId} dir="ltr">
                       <bdi>{section.title}</bdi>
                     </h2>
                   </div>
@@ -192,15 +192,15 @@ export const SyntaxReferenceView: React.FC<SyntaxReferenceViewProps> = ({
                   {section.subsections.map((subsection: SyntaxSubsection) => (
                     <section className="syntax-subsection" key={subsection.id}>
                       {subsection.heading && (
-                        <h3 dir="auto" className="arabic-text">
+                        <h3 dir="ltr" className="prose-text">
                           {subsection.heading}
                         </h3>
                       )}
 
                       {subsection.content.trim() && (
                         <div
-                          dir="auto"
-                          className="syntax-subsection__prose arabic-text"
+                          dir="ltr"
+                          className="syntax-subsection__prose prose-text"
                           dangerouslySetInnerHTML={{ __html: renderFormattedHtml(subsection.content) }}
                         />
                       )}

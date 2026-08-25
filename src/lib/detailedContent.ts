@@ -33,7 +33,7 @@ function parseCallout(raw: string): Pick<DetailedContentBlock, 'type' | 'content
   if (!marker) {
     return {
       type: 'note',
-      label: 'ملاحظة',
+      label: 'Note',
       content: lines.join('\n').trim()
     };
   }
@@ -47,10 +47,10 @@ function parseCallout(raw: string): Pick<DetailedContentBlock, 'type' | 'content
     'example-run': '',
     'example-output': '',
     error: '',
-    note: 'معلومة مهمة',
-    warning: 'خطأ شائع',
-    comparison: 'مقارنة مهمة',
-    'mental-model': 'الصورة الذهنية',
+    note: 'Important note',
+    warning: 'Common mistake',
+    comparison: 'Key comparison',
+    'mental-model': 'Mental model',
     'rich-text': ''
   };
   const firstLine = marker[2].trim();

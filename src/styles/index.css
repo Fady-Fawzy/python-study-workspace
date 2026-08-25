@@ -132,6 +132,14 @@ p {
   unicode-bidi: isolate;
 }
 
+.prose-text {
+  font-family: var(--font-sans);
+  line-height: var(--leading-relaxed);
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: isolate;
+}
+
 .arabic-block {
   direction: rtl;
   text-align: right;
@@ -621,7 +629,7 @@ p {
   max-inline-size: 100%;
   color: var(--text-secondary);
   font-size: var(--text-base);
-  line-height: var(--leading-arabic);
+  line-height: var(--leading-relaxed);
 }
 
 .detailed-markdown p + p,
@@ -925,7 +933,7 @@ p {
   max-inline-size: 100%;
   color: var(--text-secondary);
   font-size: var(--text-sm);
-  line-height: var(--leading-arabic);
+  line-height: var(--leading-relaxed);
   overflow-wrap: anywhere;
 }
 
@@ -3619,7 +3627,7 @@ button, .nav-item, .clickable {
   overscroll-behavior-inline: contain;
   color: var(--text-secondary);
   font-size: var(--text-sm);
-  line-height: var(--leading-arabic);
+  line-height: var(--leading-relaxed);
   -webkit-overflow-scrolling: touch;
 }
 

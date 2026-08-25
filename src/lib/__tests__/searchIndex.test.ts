@@ -85,7 +85,7 @@ describe('Search Engine Ranking', () => {
     const detailed020 = parseDetailedLesson(detailed020Raw, '020');
     const enrichedIndex = buildSearchIndex(lessons, syntaxSections, { '020': detailed020 });
 
-    const results = searchIndexedItems('أرضية الناتج', enrichedIndex);
+    const results = searchIndexedItems('greatest integer', enrichedIndex);
     expect(results[0]).toEqual(expect.objectContaining({
       type: 'lesson',
       lessonNumber: 20
