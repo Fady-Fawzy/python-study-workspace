@@ -62,6 +62,12 @@ function renderBookmarks(state: StudyStateV1 = baseState) {
 afterEach(cleanup);
 
 describe('bookmarks view', () => {
+  it('uses the shared editorial index layout', () => {
+    renderBookmarks();
+
+    expect(screen.getByRole('heading', { level: 1 }).closest('.editorial-index')).toBeInTheDocument();
+  });
+
   it('exposes counted filter tabs and filters lessons and syntax sections', async () => {
     const user = userEvent.setup();
     renderBookmarks();

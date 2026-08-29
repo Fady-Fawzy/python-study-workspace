@@ -4,8 +4,17 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const stylesheet = readFileSync(resolve(process.cwd(), 'src/styles/index.css'), 'utf8');
+const tokens = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'utf8');
 
 describe('markdown styling contracts', () => {
+  it('uses the editorial learning palette without glass effects', () => {
+    expect(tokens).toContain('--accent-python:');
+    expect(tokens).toContain('--accent-learning:');
+    expect(tokens).toContain('--line-strong:');
+    expect(tokens).toContain('--surface-paper:');
+    expect(stylesheet).not.toContain('backdrop-filter');
+  });
+
   it('limits inline-code badge styling to code outside preformatted blocks', () => {
     expect(stylesheet).toContain(':not(pre) > code.inline-code');
     expect(stylesheet).toContain(':not(pre) > code:not([class*="language-"])');

@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, FileEdit, RefreshCw } from 'lucide-react';
+import { Check, ChevronDown, FileEdit, RefreshCw } from 'lucide-react';
 
 interface LessonNotesProps {
   lessonId: string;
   initialNote: string;
   onSaveNote: (lessonId: string, note: string) => void;
+  initiallyOpen?: boolean;
 }
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
@@ -12,10 +13,12 @@ type SaveStatus = 'idle' | 'saving' | 'saved';
 export const LessonNotes: React.FC<LessonNotesProps> = ({
   lessonId,
   initialNote,
-  onSaveNote
+  onSaveNote,
+  initiallyOpen = true
 }) => {
   const [note, setNote] = useState(initialNote || '');
   const [status, setStatus] = useState<SaveStatus>('idle');
+  const [isOpen, setIsOpen] = useState(initiallyOpen);
   const currentLessonRef = useRef(lessonId);
   const initialNoteRef = useRef(initialNote);
   const noteRef = useRef(initialNote || '');
@@ -155,16 +158,24 @@ export const LessonNotes: React.FC<LessonNotesProps> = ({
       : 'Changes save automatically';
 
   return (
-    <section className="lesson-notes" aria-labelledby={`lesson-${lessonId}-notes-title`}>
+    <section
+      className="lesson-notes lesson-notes-panel"
+      aria-labelledby={`lesson-${lessonId}-notes-title`}
+      data-open={isOpen || undefined}
+    >
       <div className="lesson-notes__header">
-        <label
-          id={`lesson-${lessonId}-notes-title`}
-          className="lesson-notes__title"
-          htmlFor={`lesson-${lessonId}-notes`}
+        <button
+          type="button"
+          className="lesson-notes__toggle"
+          aria-expanded={isOpen}
+          aria-controls={`lesson-${lessonId}-notes-panel`}
+          aria-label={isOpen ? 'Close lesson notes' : 'Open lesson notes'}
+          onClick={() => setIsOpen((open) => !open)}
         >
           <FileEdit size={18} aria-hidden="true" />
-          <span>Personal Study Notes</span>
-        </label>
+          <span id={`lesson-${lessonId}-notes-title`}>Personal Study Notes</span>
+          <ChevronDown className="lesson-notes__chevron" size={16} aria-hidden="true" />
+        </button>
 
         <div
           className="lesson-notes__status"
@@ -179,20 +190,25 @@ export const LessonNotes: React.FC<LessonNotesProps> = ({
         </div>
       </div>
 
-      <textarea
-        id={`lesson-${lessonId}-notes`}
-        className="lesson-notes__textarea"
-        value={note}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        placeholder="Write key takeaways, mental models, code snippets, or gotchas for this lesson…"
-        dir="auto"
-        aria-describedby={`lesson-${lessonId}-notes-help`}
-      />
-      <div id={`lesson-${lessonId}-notes-help`} className="lesson-notes__footer">
-        <span>Autosaved on this device</span>
-        <span>{note.length} characters</span>
-      </div>
+      {isOpen && (
+        <div id={`lesson-${lessonId}-notes-panel`} className="lesson-notes__body">
+          <textarea
+            id={`lesson-${lessonId}-notes`}
+            className="lesson-notes__textarea"
+            value={note}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            placeholder="Write key takeaways, mental models, code snippets, or gotchas for this lesson…"
+            dir="auto"
+            aria-label="Personal Study Notes"
+            aria-describedby={`lesson-${lessonId}-notes-help`}
+          />
+          <div id={`lesson-${lessonId}-notes-help`} className="lesson-notes__footer">
+            <span>Autosaved on this device</span>
+            <span>{note.length} characters</span>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

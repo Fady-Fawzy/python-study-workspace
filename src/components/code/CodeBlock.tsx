@@ -31,14 +31,20 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ code, language = 'python',
   };
 
   const highlightedHtml = highlightCode(code, language);
-  const displayLabel = title ? `${title} (${language})` : language;
   const languageName = language.toLowerCase() === 'python' ? 'Python' : language;
+  const displayLabel = title ? `${title} (${language})` : `${languageName} code example`;
 
   return (
-    <section className="code-container" dir="ltr" role="region" aria-label={displayLabel}>
+    <section
+      className="code-container code-notebook"
+      dir="ltr"
+      role="region"
+      aria-label={displayLabel}
+      data-copy-state={copied ? 'copied' : 'idle'}
+    >
       <div className="code-header">
         <span className="code-header-lang">
-          {displayLabel}
+          {title ? displayLabel : languageName}
         </span>
         <div className="code-header-actions">
           <button

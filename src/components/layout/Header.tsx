@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search, Shield, BookOpen, Bookmark, FileText, Code2 } from 'lucide-react';
+import { Menu, Search, Shield } from 'lucide-react';
 import { ThemeToggle } from '../shared/ThemeToggle';
 import { StudyStateV1 } from '../../types/state';
 
@@ -15,9 +15,12 @@ interface HeaderProps {
   onThemeChange: (theme: 'dark' | 'light' | 'system') => void;
 }
 
-const isLinkActive = (currentPath: string, path: string) => {
-  if (path === '/') return currentPath === '/' || currentPath.startsWith('/lesson');
-  return currentPath.startsWith(path);
+const pageContext = (currentPath: string) => {
+  if (currentPath.startsWith('/lesson/')) return 'Lesson workspace';
+  if (currentPath.startsWith('/reference')) return 'Syntax reference';
+  if (currentPath.startsWith('/bookmarks')) return 'Bookmarks';
+  if (currentPath.startsWith('/notes')) return 'Notes';
+  return 'Study dashboard';
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,13 +36,6 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const completedCount = state.completedLessons.length;
   const percent = Math.round((completedCount / 55) * 100);
-  const navLinks = [
-    { label: 'Study', path: '/', icon: BookOpen },
-    { label: 'Syntax Ref', path: '/reference', icon: Code2 },
-    { label: 'Bookmarks', path: '/bookmarks', icon: Bookmark, badge: state.bookmarkedLessons.length + state.bookmarkedSyntax.length },
-    { label: 'Notes', path: '/notes', icon: FileText, badge: Object.values(state.lessonNotes).filter(note => note.trim()).length }
-  ];
-
   return (
     <header className="app-header">
       <div className="app-header__identity">
@@ -61,36 +57,13 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => onNavigate('/')}
           aria-label="Python study home"
         >
-          <span className="app-brand__mark" aria-hidden="true">PY</span>
+          <span className="app-brand__mark" aria-hidden="true">py/</span>
           <span className="app-brand__label">
-            Python <span className="app-brand__range">20→74</span>
+            Python Study <span className="app-brand__range">20—74</span>
           </span>
         </button>
+        <span className="app-header__context">{pageContext(currentPath)}</span>
       </div>
-
-      <nav className="desktop-nav-links" aria-label="Primary navigation">
-        {navLinks.map(link => {
-          const active = isLinkActive(currentPath, link.path);
-          const Icon = link.icon;
-          return (
-            <button
-              key={link.path}
-              type="button"
-              className="header-nav-link"
-              data-active={active || undefined}
-              aria-current={active ? 'page' : undefined}
-              aria-label={link.label}
-              onClick={() => onNavigate(link.path)}
-            >
-              <Icon size={15} aria-hidden="true" />
-              <span>{link.label}</span>
-              {typeof link.badge === 'number' && link.badge > 0 && (
-                <span className="navigation-count">{link.badge}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
 
       <div className="app-header__actions">
         <button

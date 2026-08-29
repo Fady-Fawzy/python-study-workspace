@@ -1,23 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Bookmark, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { Check, Bookmark, ChevronDown, ChevronRight, Search, BookOpen, Code2, FileText } from 'lucide-react';
 import { Lesson } from '../../types/content';
 import { LESSON_CATEGORIES } from '../../lib/lessonMapping';
+import { StudyStateV1 } from '../../types/state';
 
 interface SidebarProps {
   lessons: Lesson[];
   activeLessonId: string | null;
-  completedLessonIds: string[];
-  bookmarkedLessonIds: string[];
+  state: StudyStateV1;
+  currentPath: string;
+  onNavigate: (path: string) => void;
   onSelectLesson: (id: string) => void;
 }
+
+const isNavActive = (currentPath: string, path: string) => {
+  if (path === '/') return currentPath === '/' || currentPath.startsWith('/lesson/');
+  return currentPath.startsWith(path);
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   lessons,
   activeLessonId,
-  completedLessonIds,
-  bookmarkedLessonIds,
+  state,
+  currentPath,
+  onNavigate,
   onSelectLesson
 }) => {
+  const completedLessonIds = state.completedLessons;
+  const bookmarkedLessonIds = state.bookmarkedLessons;
   const [filterText, setFilterText] = useState('');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const activeLessonRowRef = useRef<HTMLButtonElement>(null);
@@ -62,6 +72,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="app-sidebar-container" aria-label="Lesson navigation">
+      <div className="sidebar-brand" aria-hidden="true">
+        <span className="sidebar-brand__mark">py/</span>
+        <span>
+          <strong>Python Study</strong>
+          <small>Lessons 20—74</small>
+        </span>
+      </div>
+
+      <nav className="sidebar-primary-nav" aria-label="Primary navigation">
+        {[
+          { label: 'Study', path: '/', icon: BookOpen },
+          { label: 'Syntax Ref', path: '/reference', icon: Code2 },
+          { label: 'Bookmarks', path: '/bookmarks', icon: Bookmark },
+          { label: 'Notes', path: '/notes', icon: FileText }
+        ].map(item => {
+          const Icon = item.icon;
+          const active = isNavActive(currentPath, item.path);
+          return (
+            <button
+              key={item.path}
+              type="button"
+              className="sidebar-primary-nav__item"
+              data-active={active || undefined}
+              aria-current={active ? 'page' : undefined}
+              onClick={() => onNavigate(item.path)}
+            >
+              <Icon size={17} aria-hidden="true" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="sidebar-section-label">
+        <span>Course library</span>
+        <span>{completedLessonIds.length}/{lessons.length}</span>
+      </div>
+
       <div className="sidebar-filter">
         <Search size={15} aria-hidden="true" />
         <label className="visually-hidden" htmlFor="sidebar-lesson-filter">Filter lessons</label>

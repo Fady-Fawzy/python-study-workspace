@@ -23,6 +23,13 @@ function renderHeader(overrides: Partial<React.ComponentProps<typeof LessonHeade
 }
 
 describe('LessonHeader', () => {
+  it('uses a document masthead and dedicated sticky mode rail', () => {
+    renderHeader();
+
+    expect(screen.getByRole('banner', { name: 'Lesson overview' })).toHaveClass('lesson-masthead');
+    expect(screen.getByRole('tablist', { name: 'Study mode' })).toHaveClass('lesson-mode-rail');
+  });
+
   it('exposes the study modes as an accessible single-select tab set', async () => {
     const user = userEvent.setup();
     const props = renderHeader();

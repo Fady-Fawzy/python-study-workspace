@@ -87,6 +87,14 @@ function renderShell(
 }
 
 describe('application shell navigation', () => {
+  it('exposes the learning brand and mobile destination navigation', () => {
+    renderShell('/notes');
+
+    expect(screen.getByRole('button', { name: /python study home/i })).toHaveTextContent('Python Study');
+    const mobileNavigation = screen.getByRole('navigation', { name: 'Mobile navigation' });
+    expect(within(mobileNavigation).getByRole('button', { name: 'Notes' })).toHaveAttribute('aria-current', 'page');
+  });
+
   it('exposes drawer state and marks Study active on lesson routes', async () => {
     const user = userEvent.setup();
     renderShell();

@@ -262,6 +262,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
           lessonId={lesson.id}
           initialNote={initialNote}
           onSaveNote={handleSaveNote}
+          initiallyOpen={false}
         />
 
         {/* Lesson Pagination */}

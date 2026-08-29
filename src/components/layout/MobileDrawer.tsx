@@ -63,7 +63,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     if (!isOpen) return;
 
     const originalOverflow = document.body.style.overflow;
-    const returnTarget = triggerRef.current ?? document.activeElement as HTMLElement | null;
+    const returnTarget = (document.activeElement as HTMLElement | null) ?? triggerRef.current;
     document.body.style.overflow = 'hidden';
     closeButtonRef.current?.focus();
 

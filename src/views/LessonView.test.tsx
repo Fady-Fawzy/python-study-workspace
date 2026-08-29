@@ -186,6 +186,8 @@ describe('LessonView', () => {
         />
       );
 
+      fireEvent.click(screen.getByRole('button', { name: /open lesson notes/i }));
+
       act(() => {
         fireEvent.change(screen.getByRole('textbox', { name: /personal study notes/i }), {
           target: { value: 'Review operator precedence.' }

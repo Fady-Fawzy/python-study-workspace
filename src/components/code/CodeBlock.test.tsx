@@ -8,6 +8,13 @@ describe('CodeBlock', () => {
     vi.restoreAllMocks();
   });
 
+  it('exposes a technical-notebook copy state on the code example region', () => {
+    render(<CodeBlock code={'value = 20'} language="python" />);
+
+    expect(screen.getByRole('region', { name: 'Python code example' }))
+      .toHaveAttribute('data-copy-state', 'idle');
+  });
+
   it('copies the exact source and resets accessible feedback after two seconds', async () => {
     vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);

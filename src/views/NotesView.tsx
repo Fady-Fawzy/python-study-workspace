@@ -100,7 +100,7 @@ export const NotesView: React.FC<NotesViewProps> = ({
   };
 
   return (
-    <div className="saved-view notes-view">
+    <div className="saved-view notes-view editorial-index">
       <header className="saved-view__header">
         <div className="saved-view__eyebrow">
           <FileText size={20} aria-hidden="true" />

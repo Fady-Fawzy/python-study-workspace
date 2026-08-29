@@ -87,6 +87,19 @@ function renderActivityDashboard() {
 afterEach(cleanup);
 
 describe('study dashboard', () => {
+  it('presents one editorial study hierarchy instead of competing dashboard cards', () => {
+    renderDashboard({
+      completedLessons: ['020'],
+      recentLessonIds: ['021'],
+      lastOpenedLessonId: '020'
+    });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Continue learning' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Course status' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Study trail' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Continue Studying' })).toHaveClass('dashboard-continue--editorial');
+  });
+
   it('resumes the saved lesson and falls back to the first available lesson', async () => {
     const user = userEvent.setup();
     localStorage.clear();

@@ -110,6 +110,12 @@ afterEach(() => {
 });
 
 describe('syntax reference', () => {
+  it('uses the shared editorial index layout', () => {
+    renderReference();
+
+    expect(screen.getByRole('heading', { level: 1 }).closest('.editorial-index')).toBeInTheDocument();
+  });
+
   it('combines category filtering and search while exposing selection state', async () => {
     const user = userEvent.setup();
     renderReference();
@@ -169,7 +175,7 @@ describe('syntax reference', () => {
     expect(screen.getAllByRole('article')).toHaveLength(syntaxSections.length);
     expect(screen.getByRole('heading', { name: 'أساسيات Arithmetic' })).toBeInTheDocument();
     expect(screen.getByText('append()', { selector: 'code' })).toHaveAttribute('dir', 'ltr');
-    const codeRegions = screen.getAllByRole('region', { name: 'python' });
+    const codeRegions = screen.getAllByRole('region', { name: 'Python code example' });
     expect(codeRegions[0]).toHaveTextContent('total = 2 + 3');
     expect(codeRegions).toHaveLength(2);
   });

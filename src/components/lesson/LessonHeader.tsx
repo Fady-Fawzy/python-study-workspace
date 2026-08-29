@@ -63,7 +63,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
   };
 
   return (
-    <header className="lesson-header">
+    <header className="lesson-header lesson-masthead" aria-label="Lesson overview">
       <div className="lesson-header__topline">
         <div className="lesson-header__meta">
           <span className="lesson-header__number" dir="ltr">Lesson {lessonId}</span>
@@ -111,7 +111,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
       <h1 className="lesson-header__title" dir="auto">{title}</h1>
 
       <div
-        className="lesson-mode-switch"
+        className="lesson-mode-switch lesson-mode-rail"
         data-mode-count={modes.length}
         role="tablist"
         aria-label="Study mode"

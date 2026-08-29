@@ -6,6 +6,18 @@ describe('LessonNotes', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
+  it('can stay out of the reading flow until the learner opens it', () => {
+    render(<LessonNotes lessonId="020" initialNote="" onSaveNote={vi.fn()} initiallyOpen={false} />);
+
+    const toggle = screen.getByRole('button', { name: 'Open lesson notes' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('textbox', { name: /personal study notes/i })).not.toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('textbox', { name: /personal study notes/i })).toBeInTheDocument();
+  });
+
   it('debounces autosave and exposes saving feedback through a live status', () => {
     const onSaveNote = vi.fn();
     render(<LessonNotes lessonId="020" initialNote="" onSaveNote={onSaveNote} />);

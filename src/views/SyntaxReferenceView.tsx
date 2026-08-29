@@ -93,7 +93,7 @@ export const SyntaxReferenceView: React.FC<SyntaxReferenceViewProps> = ({
   ];
 
   return (
-    <div className="syntax-reference">
+    <div className="syntax-reference editorial-index">
       <header className="syntax-reference__header">
         <div className="syntax-reference__eyebrow">
           <Code2 size={18} aria-hidden="true" />

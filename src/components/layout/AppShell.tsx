@@ -3,6 +3,7 @@ import { BookOpen, Bookmark, Code2, FileText, Shield, Sun } from 'lucide-react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { MobileDrawer } from './MobileDrawer';
+import { MobileBottomNav } from './MobileBottomNav';
 import { OfflineStatus } from './OfflineStatus';
 import { SearchCommand, SearchModal } from '../search/SearchModal';
 import { BackupModal } from '../backup/BackupModal';
@@ -150,8 +151,9 @@ export const AppShell: React.FC<AppShellProps> = ({
       <Sidebar
         lessons={lessons}
         activeLessonId={activeLessonId}
-        completedLessonIds={state.completedLessons}
-        bookmarkedLessonIds={state.bookmarkedLessons}
+        state={state}
+        currentPath={currentPath}
+        onNavigate={onNavigate}
         onSelectLesson={(id) => onNavigate(`/lesson/${id}`)}
       />
 
@@ -192,6 +194,14 @@ export const AppShell: React.FC<AppShellProps> = ({
           {children}
         </main>
       </div>
+
+      <MobileBottomNav
+        currentPath={currentPath}
+        isLessonsOpen={isMobileDrawerOpen}
+        onNavigate={onNavigate}
+        onOpenLessons={() => setIsMobileDrawerOpen(true)}
+        onOpenSearch={openSearch}
+      />
 
       {/* Global Search Modal */}
       <SearchModal

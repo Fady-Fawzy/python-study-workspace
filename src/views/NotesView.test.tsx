@@ -73,6 +73,12 @@ afterEach(() => {
 });
 
 describe('notes view', () => {
+  it('uses the shared editorial index layout', () => {
+    renderNotes();
+
+    expect(screen.getByRole('heading', { level: 1 }).closest('.editorial-index')).toBeInTheDocument();
+  });
+
   it('filters notes by category and uses AND matching for multi-word searches', async () => {
     const user = userEvent.setup();
     renderNotes();

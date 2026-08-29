@@ -83,7 +83,7 @@ export const BookmarksView: React.FC<BookmarksViewProps> = ({
   });
 
   return (
-    <div className="saved-view bookmarks-view">
+    <div className="saved-view bookmarks-view editorial-index">
       <header className="saved-view__header">
         <div className="saved-view__eyebrow">
           <Bookmark size={20} fill="currentColor" aria-hidden="true" />
