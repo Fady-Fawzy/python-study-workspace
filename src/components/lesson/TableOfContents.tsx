@@ -1,11 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { List, X } from 'lucide-react';
 import { TocItem } from '../../types/content';
-import { CLOSE_TRANSIENT_OVERLAYS_EVENT } from '../../lib/overlayEvents';
+import {
+  CLOSE_TRANSIENT_OVERLAYS_EVENT,
+  closeTransientOverlays
+} from '../../lib/overlayEvents';
 
 interface TableOfContentsProps {
   items: TocItem[];
   variant?: 'mobile' | 'desktop' | 'both';
+  activeId?: string;
+  onSelectItem?: (item: TocItem) => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  triggerMode?: 'inline' | 'external';
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 const focusableSelector = [
@@ -39,29 +48,49 @@ function TocLabel({ text }: { text: string }) {
 
 export const TableOfContents: React.FC<TableOfContentsProps> = ({
   items,
-  variant = 'both'
+  variant = 'both',
+  activeId: controlledActiveId,
+  onSelectItem,
+  isOpen: controlledOpen,
+  onOpenChange,
+  triggerMode = 'inline',
+  returnFocusRef
 }) => {
-  const [activeId, setActiveId] = useState(items[0]?.id ?? '');
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [internalActiveId, setInternalActiveId] = useState(items[0]?.id ?? '');
+  const [internalOpen, setInternalOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const showMobile = variant !== 'desktop';
   const showDesktop = variant !== 'mobile';
+  const activeId = controlledActiveId ?? internalActiveId;
+  const isMobileOpen = controlledOpen ?? internalOpen;
+  const isActiveControlled = controlledActiveId !== undefined;
+  const isOpenControlled = controlledOpen !== undefined;
+
+  const setIsMobileOpen = useCallback((open: boolean) => {
+    if (!isOpenControlled) setInternalOpen(open);
+    onOpenChange?.(open);
+  }, [isOpenControlled, onOpenChange]);
+
+  const openMobileSheet = () => {
+    closeTransientOverlays();
+    setIsMobileOpen(true);
+  };
 
   useEffect(() => {
     if (!items.some(item => item.id === activeId)) {
-      setActiveId(items[0]?.id ?? '');
+      if (!isActiveControlled) setInternalActiveId(items[0]?.id ?? '');
     }
-  }, [activeId, items]);
+  }, [activeId, isActiveControlled, items]);
 
   useEffect(() => {
-    if (items.length === 0 || typeof IntersectionObserver === 'undefined') return;
+    if (isActiveControlled || items.length === 0 || typeof IntersectionObserver === 'undefined') return;
 
     const observer = new IntersectionObserver(
       entries => {
         const visibleHeading = entries.find(entry => entry.isIntersecting);
-        if (visibleHeading) setActiveId(visibleHeading.target.id);
+        if (visibleHeading) setInternalActiveId(visibleHeading.target.id);
       },
       { rootMargin: '-80px 0px -60% 0px' }
     );
@@ -72,13 +101,13 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
     });
 
     return () => observer.disconnect();
-  }, [items]);
+  }, [isActiveControlled, items]);
 
   useEffect(() => {
     if (!isMobileOpen) return;
 
     const originalOverflow = document.body.style.overflow;
-    const returnTarget = triggerRef.current;
+    const returnTarget = returnFocusRef?.current ?? triggerRef.current;
     document.body.style.overflow = 'hidden';
     closeButtonRef.current?.focus();
 
@@ -110,22 +139,26 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
       document.body.style.overflow = originalOverflow;
       returnTarget?.focus({ preventScroll: true });
     };
-  }, [isMobileOpen]);
+  }, [isMobileOpen, returnFocusRef, setIsMobileOpen]);
 
   useEffect(() => {
     const closeForAnotherOverlay = () => setIsMobileOpen(false);
     window.addEventListener(CLOSE_TRANSIENT_OVERLAYS_EVENT, closeForAnotherOverlay);
     return () => window.removeEventListener(CLOSE_TRANSIENT_OVERLAYS_EVENT, closeForAnotherOverlay);
-  }, []);
+  }, [setIsMobileOpen]);
 
   if (items.length <= 1) return null;
 
-  const scrollToHeading = (id: string) => {
-    const heading = document.getElementById(id);
-    const reduceMotion = typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    heading?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    setActiveId(id);
+  const selectItem = (item: TocItem) => {
+    if (onSelectItem) {
+      onSelectItem(item);
+    } else {
+      const heading = document.getElementById(item.id);
+      const reduceMotion = typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      heading?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      setInternalActiveId(item.id);
+    }
     setIsMobileOpen(false);
   };
 
@@ -143,7 +176,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             data-level={item.level}
             aria-current={isActive ? 'location' : undefined}
             aria-label={item.text}
-            onClick={() => scrollToHeading(item.id)}
+            onClick={() => selectItem(item)}
             title={location === 'desktop' ? item.text : undefined}
             dir={isArabic ? 'rtl' : 'ltr'}
           >
@@ -156,7 +189,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
 
   return (
     <>
-      {showMobile && (
+      {showMobile && triggerMode === 'inline' && (
         <div className="mobile-toc-trigger">
           <button
             ref={triggerRef}
@@ -167,7 +200,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
             aria-expanded={isMobileOpen}
             data-open={isMobileOpen ? 'true' : 'false'}
             aria-controls="mobile-lesson-contents"
-            onClick={() => setIsMobileOpen(true)}
+            onClick={openMobileSheet}
           >
             <List size={18} aria-hidden="true" />
             <span>Lesson contents</span>

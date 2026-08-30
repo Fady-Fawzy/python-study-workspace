@@ -3,7 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Lesson, SyntaxSection } from '../types/content';
 import { StudyStateV1 } from '../types/state';
-import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
+import {
+  readReadingCheckpoint,
+  readReadingPosition,
+  writeReadingCheckpoint,
+  writeReadingPosition
+} from '../lib/readingPosition';
 import { getStudyActivitySummary, readStudyActivity } from '../lib/studyActivity';
 import { LessonView } from './LessonView';
 
@@ -67,6 +72,21 @@ const relatedSyntaxSections: SyntaxSection[] = [
   }
 ];
 
+const detailedLesson = {
+  id: '020',
+  number: 20,
+  title: lesson.title,
+  rawMarkdown: '',
+  blocks: [
+    { id: 'first', type: 'heading' as const, level: 2, content: 'First' },
+    { id: 'second', type: 'heading' as const, level: 2, content: 'Second' }
+  ],
+  toc: [
+    { id: 'first', text: 'First', level: 2 },
+    { id: 'second', text: 'Second', level: 2 }
+  ]
+};
+
 describe('LessonView', () => {
   it('starts in the persisted mode and persists a new mode selection', async () => {
     window.scrollTo = vi.fn();
@@ -111,22 +131,8 @@ describe('LessonView', () => {
     expect(getStudyActivitySummary().todayStudied).toBe(true);
   });
 
-  it('places the mobile contents trigger before lesson content rather than after notes and pagination', () => {
+  it('places contents in the study dock before lesson content', () => {
     window.scrollTo = vi.fn();
-    const detailedLesson = {
-      id: '020',
-      number: 20,
-      title: lesson.title,
-      rawMarkdown: '',
-      blocks: [
-        { id: 'first', type: 'heading' as const, level: 2, content: 'First' },
-        { id: 'second', type: 'heading' as const, level: 2, content: 'Second' }
-      ],
-      toc: [
-        { id: 'first', text: 'First', level: 2 },
-        { id: 'second', text: 'Second', level: 2 }
-      ]
-    };
 
     render(
       <LessonView
@@ -142,6 +148,7 @@ describe('LessonView', () => {
 
     const trigger = screen.getByRole('button', { name: /open lesson contents/i });
     const modePanel = screen.getByRole('tabpanel');
+    expect(screen.getByRole('region', { name: 'Study controls' })).toContainElement(trigger);
     expect(trigger.compareDocumentPosition(modePanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -186,7 +193,9 @@ describe('LessonView', () => {
         />
       );
 
-      fireEvent.click(screen.getByRole('button', { name: /open lesson notes/i }));
+      fireEvent.click(screen.getByRole('button', { name: /open personal study notes/i }));
+
+      expect(screen.getAllByRole('textbox', { name: /personal study notes/i })).toHaveLength(1);
 
       act(() => {
         fireEvent.change(screen.getByRole('textbox', { name: /personal study notes/i }), {
@@ -262,6 +271,59 @@ describe('LessonView', () => {
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 480, behavior: 'auto' });
   });
 
+  it('restores the exact saved heading before falling back to pixels', () => {
+    localStorage.clear();
+    window.scrollTo = vi.fn();
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    writeReadingCheckpoint('020', {
+      y: 480,
+      sectionId: 'second',
+      sectionText: 'Second',
+      updatedAt: '2026-08-30T10:00:00.000Z'
+    });
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{ '020': detailedLesson }}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' });
+    expect(window.scrollTo).not.toHaveBeenCalledWith({ top: 480, behavior: 'auto' });
+  });
+
+  it('falls back to the saved pixel when a checkpoint heading is stale', () => {
+    localStorage.clear();
+    window.scrollTo = vi.fn();
+    writeReadingCheckpoint('020', {
+      y: 360,
+      sectionId: 'removed-heading',
+      sectionText: 'Removed heading',
+      updatedAt: '2026-08-30T10:00:00.000Z'
+    });
+
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{ '020': detailedLesson }}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+      />
+    );
+
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 360, behavior: 'auto' });
+  });
+
   it('persists the current lesson position after scrolling', () => {
     localStorage.clear();
     window.scrollTo = vi.fn();
@@ -275,7 +337,7 @@ describe('LessonView', () => {
       <LessonView
         lessonId="020"
         lessons={[lesson]}
-        detailedLessons={{}}
+        detailedLessons={{ '020': detailedLesson }}
         syntaxSections={[]}
         state={{ ...state, preferredMode: 'detailed' }}
         onUpdateState={vi.fn()}
@@ -288,6 +350,32 @@ describe('LessonView', () => {
     });
 
     expect(readReadingPosition('020')).toBe(540);
+    expect(readReadingCheckpoint('020')).toEqual(expect.objectContaining({
+      sectionId: 'second',
+      sectionText: 'Second'
+    }));
+  });
+
+  it('keeps study controls, contents, and notes available in Full View', async () => {
+    window.scrollTo = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <LessonView
+        lessonId="020"
+        lessons={[lesson]}
+        detailedLessons={{ '020': detailedLesson }}
+        syntaxSections={[]}
+        state={{ ...state, preferredMode: 'detailed' }}
+        onUpdateState={vi.fn()}
+        onNavigate={vi.fn()}
+        isFullView
+      />
+    );
+
+    expect(screen.getByRole('region', { name: 'Study controls' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open lesson contents/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /open personal study notes/i }));
+    expect(screen.getByRole('textbox', { name: /personal study notes/i })).toBeInTheDocument();
   });
 
   it('renders Practice for a mapped lesson and persists the selected answer', async () => {

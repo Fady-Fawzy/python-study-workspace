@@ -1,26 +1,22 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LessonNotes } from './LessonNotes';
+import { LessonNotesEditor } from './LessonNotes';
 
 describe('LessonNotes', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('can stay out of the reading flow until the learner opens it', () => {
-    render(<LessonNotes lessonId="020" initialNote="" onSaveNote={vi.fn()} initiallyOpen={false} />);
+  it('renders one editor without owning disclosure state', () => {
+    render(<LessonNotesEditor lessonId="020" initialNote="" onSaveNote={vi.fn()} />);
 
-    const toggle = screen.getByRole('button', { name: 'Open lesson notes' });
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('textbox', { name: /personal study notes/i })).not.toBeInTheDocument();
-
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('textbox', { name: /personal study notes/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /lesson notes/i })).not.toBeInTheDocument();
+    expect(screen.getByText('0 characters')).toBeInTheDocument();
   });
 
   it('debounces autosave and exposes saving feedback through a live status', () => {
     const onSaveNote = vi.fn();
-    render(<LessonNotes lessonId="020" initialNote="" onSaveNote={onSaveNote} />);
+    render(<LessonNotesEditor lessonId="020" initialNote="" onSaveNote={onSaveNote} />);
     const textarea = screen.getByRole('textbox', { name: /personal study notes/i });
 
     fireEvent.change(textarea, { target: { value: 'remember this' } });
@@ -35,7 +31,7 @@ describe('LessonNotes', () => {
 
   it('flushes a pending edit on blur without a later duplicate save', () => {
     const onSaveNote = vi.fn();
-    render(<LessonNotes lessonId="020" initialNote="" onSaveNote={onSaveNote} />);
+    render(<LessonNotesEditor lessonId="020" initialNote="" onSaveNote={onSaveNote} />);
     const textarea = screen.getByRole('textbox', { name: /personal study notes/i });
 
     fireEvent.change(textarea, { target: { value: 'blurred note' } });
@@ -50,11 +46,11 @@ describe('LessonNotes', () => {
   it('flushes the old lesson before switching and prevents a stale timer save', () => {
     const onSaveNote = vi.fn();
     const { rerender } = render(
-      <LessonNotes lessonId="020" initialNote="old persisted" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="old persisted" onSaveNote={onSaveNote} />
     );
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'pending lesson 20' } });
 
-    rerender(<LessonNotes lessonId="021" initialNote="lesson 21 note" onSaveNote={onSaveNote} />);
+    rerender(<LessonNotesEditor lessonId="021" initialNote="lesson 21 note" onSaveNote={onSaveNote} />);
 
     expect(onSaveNote).toHaveBeenCalledTimes(1);
     expect(onSaveNote).toHaveBeenCalledWith('020', 'pending lesson 20');
@@ -67,7 +63,7 @@ describe('LessonNotes', () => {
   it('flushes a pending edit when unmounted', () => {
     const onSaveNote = vi.fn();
     const { unmount } = render(
-      <LessonNotes lessonId="020" initialNote="" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="" onSaveNote={onSaveNote} />
     );
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'save before leaving' } });
 
@@ -82,11 +78,11 @@ describe('LessonNotes', () => {
   it('syncs a same-lesson note restored by an external state replacement', () => {
     const onSaveNote = vi.fn();
     const { rerender } = render(
-      <LessonNotes lessonId="020" initialNote="before restore" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="before restore" onSaveNote={onSaveNote} />
     );
 
     rerender(
-      <LessonNotes lessonId="020" initialNote="restored backup note" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="restored backup note" onSaveNote={onSaveNote} />
     );
 
     expect(screen.getByRole('textbox')).toHaveValue('restored backup note');
@@ -96,12 +92,12 @@ describe('LessonNotes', () => {
   it('discards a pending draft when an external restore replaces the same lesson note', () => {
     const onSaveNote = vi.fn();
     const { rerender, unmount } = render(
-      <LessonNotes lessonId="020" initialNote="persisted note" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="persisted note" onSaveNote={onSaveNote} />
     );
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'stale pending draft' } });
 
     rerender(
-      <LessonNotes lessonId="020" initialNote="authoritative restored note" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="authoritative restored note" onSaveNote={onSaveNote} />
     );
 
     expect(screen.getByRole('textbox')).toHaveValue('authoritative restored note');
@@ -116,12 +112,12 @@ describe('LessonNotes', () => {
   it('keeps the draft stable when its own save is reflected back through initialNote', () => {
     const onSaveNote = vi.fn();
     const { rerender } = render(
-      <LessonNotes lessonId="020" initialNote="old note" onSaveNote={onSaveNote} />
+      <LessonNotesEditor lessonId="020" initialNote="old note" onSaveNote={onSaveNote} />
     );
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'saved draft' } });
     act(() => vi.advanceTimersByTime(600));
 
-    rerender(<LessonNotes lessonId="020" initialNote="saved draft" onSaveNote={onSaveNote} />);
+    rerender(<LessonNotesEditor lessonId="020" initialNote="saved draft" onSaveNote={onSaveNote} />);
 
     expect(screen.getByRole('textbox')).toHaveValue('saved draft');
     act(() => vi.advanceTimersByTime(3000));

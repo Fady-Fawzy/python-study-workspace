@@ -148,4 +148,50 @@ describe('markdown styling contracts', () => {
       /@media \(max-width: 600px\)[\s\S]*?\.dashboard-focus\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s
     );
   });
+
+  it('keeps the lesson study dock sticky, opaque, and clear of targeted headings', () => {
+    expect(tokens).toContain('--lesson-dock-offset:');
+    expect(stylesheet).toMatch(
+      /\.lesson-study-dock\s*\{[^}]*position:\s*sticky;[^}]*inset-block-start:\s*var\(--lesson-dock-top\);[^}]*z-index:\s*var\(--z-navigation\);[^}]*background-color:\s*var\(--surface-paper\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.detailed-heading,[\s\S]*?\.lesson-section-heading\s*\{[^}]*scroll-margin-block-start:\s*var\(--lesson-dock-offset\);/s
+    );
+  });
+
+  it('shares wide lesson space with a real notes side panel without crushing prose', () => {
+    expect(stylesheet).toMatch(
+      /@media \(min-width: 1180px\)[\s\S]*?\.lesson-workspace\[data-notes-open\]\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0, 1fr\) minmax\(280px, 320px\);/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(min-width: 1180px\)[\s\S]*?\.lesson-workspace\[data-notes-open\]\s*>\s*\.desktop-toc-container\s*\{[^}]*display:\s*none;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(min-width: 1440px\)[\s\S]*?\.lesson-workspace\[data-notes-open\]\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) var\(--toc-width\) minmax\(280px, 320px\);/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(min-width: 1180px\)[\s\S]*?\.lesson-notes-backdrop\[data-desktop\]\s*\{[^}]*position:\s*sticky;[^}]*background:\s*transparent;/s
+    );
+  });
+
+  it('turns notes into a safe-area bottom sheet below the wide breakpoint', () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 1179px\)[\s\S]*?\.lesson-notes-backdrop:not\(\[data-desktop\]\)\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0;[^}]*padding-inline:[^}]*var\(--safe-area-left\)[^}]*var\(--safe-area-right\)[^;}]*;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 1179px\)[\s\S]*?\.lesson-notes-surface\s*\{[^}]*max-block-size:\s*calc\(88dvh - var\(--safe-area-top\)\);[^}]*padding-block-end:\s*var\(--safe-area-bottom\);/s
+    );
+  });
+
+  it('retains study tools in Full View and removes motion from the new surfaces', () => {
+    expect(stylesheet).toMatch(
+      /\.app-shell--full-view\s+\.lesson-study-dock\s*\{[^}]*inset-block-start:\s*var\(--safe-area-top\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.app-shell--full-view\s+\.lesson-notes-surface\s*\{[^}]*border-color:\s*var\(--line-strong\);/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.lesson-notes-surface,[\s\S]*?\.lesson-study-dock\s*\{[^}]*transition:\s*none;/s
+    );
+  });
 });

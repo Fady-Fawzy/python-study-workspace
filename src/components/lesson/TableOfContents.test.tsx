@@ -109,6 +109,42 @@ describe('TableOfContents', () => {
     heading.remove();
   });
 
+  it('uses a shared controlled active section and delegates selection', async () => {
+    const user = userEvent.setup();
+    const onSelectItem = vi.fn();
+
+    render(
+      <TableOfContents
+        items={items}
+        variant="desktop"
+        activeId="union"
+        onSelectItem={onSelectItem}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /union/i })).toHaveAttribute('aria-current', 'location');
+    await user.click(screen.getByRole('button', { name: /clear/i }));
+
+    expect(onSelectItem).toHaveBeenCalledWith(items[0]);
+  });
+
+  it('supports an externally controlled mobile sheet without rendering a duplicate trigger', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <TableOfContents
+        items={items}
+        variant="mobile"
+        triggerMode="external"
+        isOpen
+        onOpenChange={onOpenChange}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /open lesson contents/i })).not.toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByTestId('mobile-toc-backdrop'));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it('uses RTL rows while isolating a leading Python identifier as LTR', () => {
     render(<TableOfContents items={items} variant="desktop" />);
     const row = screen.getByRole('button', { name: /clear/i });

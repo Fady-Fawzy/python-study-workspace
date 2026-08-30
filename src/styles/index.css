@@ -1947,7 +1947,6 @@ p {
 .app-shell--full-view .app-sidebar-container,
 .app-shell--full-view .app-header,
 .app-shell--full-view .lesson-header__secondary-actions,
-.app-shell--full-view .lesson-notes,
 .app-shell--full-view .lesson-pagination {
   display: none;
 }
@@ -6448,7 +6447,7 @@ button, .nav-item, .clickable {
 .lesson-progress {
   max-inline-size: var(--reading-measure);
   margin-inline: auto;
-  margin-block-end: var(--space-7);
+  margin-block-end: var(--space-6);
   padding-block-end: var(--space-3);
   border-block-end: 1px solid var(--border-subtle);
 }
@@ -6695,6 +6694,384 @@ button, .nav-item, .clickable {
 
   .lesson-pagination__link + .lesson-pagination__link {
     border-inline-start: 0;
+  }
+}
+
+/* ==========================================================================
+   Lesson Experience 2.0 — persistent study controls and notes workspace
+   ========================================================================== */
+
+.lesson-study-dock {
+  position: sticky;
+  inset-block-start: var(--lesson-dock-top);
+  z-index: var(--z-navigation);
+  display: grid;
+  grid-template-columns: minmax(280px, 0.92fr) minmax(0, 1.08fr);
+  align-items: stretch;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  margin-block-end: var(--space-7);
+  border-block: 1px solid var(--line-strong);
+  background-color: var(--surface-paper);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--bg-app) 82%, transparent);
+}
+
+.lesson-study-dock .lesson-mode-rail {
+  inline-size: 100%;
+  border-block: 0;
+  border-inline-end: 1px solid var(--line-strong);
+}
+
+.lesson-study-dock__context {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-inline-size: 0;
+  gap: var(--space-3);
+  padding-inline: var(--space-3);
+}
+
+.lesson-study-dock__section {
+  display: flex;
+  flex: 1 1 190px;
+  align-items: center;
+  min-inline-size: 0;
+  max-inline-size: 320px;
+  gap: var(--space-3);
+}
+
+.lesson-study-dock__section-copy {
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lesson-study-dock__section-copy span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.lesson-study-dock__section-copy strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lesson-study-dock__section progress {
+  appearance: none;
+  inline-size: 72px;
+  min-inline-size: 52px;
+  block-size: 3px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--border-subtle);
+}
+
+.lesson-study-dock__section progress::-webkit-progress-bar {
+  background-color: var(--border-subtle);
+}
+
+.lesson-study-dock__section progress::-webkit-progress-value,
+.lesson-study-dock__section progress::-moz-progress-bar {
+  background-color: var(--accent-learning);
+}
+
+.lesson-study-dock__actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--space-1);
+}
+
+.lesson-study-dock__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--touch-target);
+  min-block-size: var(--touch-target);
+  gap: 6px;
+  padding-inline: var(--space-2);
+  border-inline-start: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 680;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.lesson-study-dock__action:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--accent-python);
+}
+
+.lesson-study-dock__resume {
+  color: var(--accent-learning);
+}
+
+.detailed-heading,
+.lesson-section-heading {
+  scroll-margin-block-start: var(--lesson-dock-offset);
+}
+
+.desktop-toc-container {
+  top: var(--lesson-dock-offset);
+  max-block-size: calc(100dvh - var(--lesson-dock-offset) - var(--space-4));
+}
+
+.lesson-toc__item[data-active] {
+  box-shadow: inset 3px 0 0 currentColor;
+}
+
+.lesson-notes-backdrop,
+.lesson-notes-surface,
+.lesson-notes-surface__body {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.lesson-notes-surface {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-paper);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-drawer);
+}
+
+.lesson-notes-surface__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-block-end: 1px solid var(--line-strong);
+}
+
+.lesson-notes-surface__eyebrow {
+  display: block;
+  margin-block-end: 2px;
+  color: var(--accent-learning);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lesson-notes-surface__header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.lesson-notes-surface__header h2 svg {
+  color: var(--accent-python);
+}
+
+.lesson-notes-surface__body {
+  flex: 1;
+  padding: var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lesson-notes-editor {
+  max-inline-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lesson-notes-editor > .lesson-notes__header {
+  justify-content: flex-end;
+  margin-block-end: var(--space-2);
+}
+
+.lesson-notes-editor .lesson-notes__title {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.lesson-notes-editor .lesson-notes__body {
+  padding: 0;
+}
+
+.lesson-notes-editor .lesson-notes__textarea {
+  min-block-size: clamp(220px, 42vh, 520px);
+  resize: vertical;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-paper);
+  box-shadow: inset 3px 0 0 var(--accent-learning);
+}
+
+.app-shell--full-view .lesson-study-dock {
+  inset-block-start: var(--safe-area-top);
+}
+
+.app-shell--full-view .lesson-notes-surface {
+  border-color: var(--line-strong);
+}
+
+@media (min-width: 1180px) {
+  .lesson-workspace[data-notes-open] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+    gap: var(--space-5);
+  }
+
+  .lesson-workspace[data-notes-open] > .lesson-main-column {
+    grid-column: 1;
+  }
+
+  .lesson-workspace[data-notes-open] > .desktop-toc-container {
+    display: none;
+  }
+
+  .lesson-notes-backdrop[data-desktop] {
+    position: sticky;
+    inset-block-start: var(--lesson-dock-offset);
+    grid-column: 2;
+    align-self: start;
+    inline-size: 100%;
+    max-block-size: calc(100dvh - var(--lesson-dock-offset) - var(--space-4));
+    background: transparent;
+  }
+
+  .lesson-notes-backdrop[data-desktop] .lesson-notes-surface {
+    max-block-size: inherit;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 1440px) {
+  .lesson-workspace[data-notes-open] {
+    grid-template-columns: minmax(0, 1fr) var(--toc-width) minmax(280px, 320px);
+  }
+
+  .lesson-workspace[data-notes-open] > .desktop-toc-container {
+    display: block;
+    grid-column: 2;
+  }
+
+  .lesson-workspace[data-notes-open] > .lesson-notes-backdrop[data-desktop] {
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 1179px) {
+  .lesson-notes-backdrop:not([data-desktop]) {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-inline:
+      max(var(--space-2), var(--safe-area-left))
+      max(var(--space-2), var(--safe-area-right));
+    background-color: var(--bg-overlay);
+  }
+
+  .lesson-notes-surface {
+    inline-size: min(100%, 720px);
+    max-block-size: calc(88dvh - var(--safe-area-top));
+    padding-block-end: var(--safe-area-bottom);
+    border-block-end: 0;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --lesson-dock-offset: calc(var(--lesson-dock-top) + 184px);
+  }
+
+  .lesson-study-dock {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lesson-study-dock .lesson-mode-rail {
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--line-strong);
+  }
+
+  .lesson-study-dock__context {
+    min-block-size: var(--touch-target);
+    padding-inline-end: 0;
+  }
+
+  .lesson-study-dock__section {
+    max-inline-size: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .lesson-study-dock {
+    margin-inline: calc(var(--page-gutter-compact) * -1);
+    inline-size: calc(100% + var(--page-gutter-compact) * 2);
+  }
+
+  .lesson-study-dock__context {
+    gap: var(--space-1);
+    padding-inline-start: var(--space-2);
+  }
+
+  .lesson-study-dock__section progress {
+    display: none;
+  }
+
+  .lesson-study-dock__action span {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .app-shell--full-view .lesson-study-dock {
+    padding-inline-end: calc(var(--touch-target) + var(--space-2));
+  }
+
+  .lesson-notes-surface__header,
+  .lesson-notes-surface__body {
+    padding-inline: var(--space-3);
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --lesson-dock-offset: calc(var(--lesson-dock-top) + 198px);
+  }
+
+  .lesson-study-dock__section-copy strong {
+    max-inline-size: 16ch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-notes-surface,
+  .lesson-study-dock {
+    transition: none;
   }
 }
 

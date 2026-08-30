@@ -1,8 +1,6 @@
-import React, { KeyboardEvent } from 'react';
-import { BookOpen, Check, ClipboardCheck, Maximize2, Minimize2, Zap } from 'lucide-react';
+import React from 'react';
+import { Check, Maximize2, Minimize2 } from 'lucide-react';
 import { BookmarkButton } from '../shared/BookmarkButton';
-
-type StudyMode = 'detailed' | 'quickReview' | 'practice';
 
 interface LessonHeaderProps {
   lessonId: string;
@@ -10,11 +8,8 @@ interface LessonHeaderProps {
   category: string;
   isCompleted: boolean;
   isBookmarked: boolean;
-  activeMode: StudyMode;
-  hasPractice?: boolean;
   onToggleComplete: () => void;
   onToggleBookmark: () => void;
-  onModeChange: (mode: StudyMode) => void;
   isFullView?: boolean;
   onToggleFullView?: (active: boolean) => void;
 }
@@ -25,43 +20,11 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
   category,
   isCompleted,
   isBookmarked,
-  activeMode,
-  hasPractice = false,
   onToggleComplete,
   onToggleBookmark,
-  onModeChange,
   isFullView = false,
   onToggleFullView = () => undefined
 }) => {
-  const modes: StudyMode[] = hasPractice
-    ? ['detailed', 'quickReview', 'practice']
-    : ['detailed', 'quickReview'];
-
-  const selectMode = (mode: typeof modes[number]) => {
-    onModeChange(mode);
-    window.requestAnimationFrame(() => {
-      document.getElementById(`lesson-${lessonId}-${mode}-tab`)?.focus();
-    });
-  };
-
-  const handleModeKeyDown = (
-    event: KeyboardEvent<HTMLButtonElement>,
-    mode: typeof modes[number]
-  ) => {
-    const currentIndex = modes.indexOf(mode);
-    let nextIndex: number | null = null;
-
-    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % modes.length;
-    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + modes.length) % modes.length;
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = modes.length - 1;
-
-    if (nextIndex !== null) {
-      event.preventDefault();
-      selectMode(modes[nextIndex]);
-    }
-  };
-
   return (
     <header className="lesson-header lesson-masthead" aria-label="Lesson overview">
       <div className="lesson-header__topline">
@@ -109,63 +72,6 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
       </div>
 
       <h1 className="lesson-header__title" dir="auto">{title}</h1>
-
-      <div
-        className="lesson-mode-switch lesson-mode-rail"
-        data-mode-count={modes.length}
-        role="tablist"
-        aria-label="Study mode"
-      >
-        <button
-          id={`lesson-${lessonId}-detailed-tab`}
-          type="button"
-          role="tab"
-          className="lesson-mode-switch__tab"
-          data-selected={activeMode === 'detailed' || undefined}
-          aria-selected={activeMode === 'detailed'}
-          aria-controls={`lesson-${lessonId}-mode-panel`}
-          tabIndex={activeMode === 'detailed' ? 0 : -1}
-          onClick={() => onModeChange('detailed')}
-          onKeyDown={(event) => handleModeKeyDown(event, 'detailed')}
-        >
-          <BookOpen size={17} aria-hidden="true" />
-          <span>Detailed Study</span>
-        </button>
-
-        <button
-          id={`lesson-${lessonId}-quickReview-tab`}
-          type="button"
-          role="tab"
-          className="lesson-mode-switch__tab lesson-mode-switch__tab--quick"
-          data-selected={activeMode === 'quickReview' || undefined}
-          aria-selected={activeMode === 'quickReview'}
-          aria-controls={`lesson-${lessonId}-mode-panel`}
-          tabIndex={activeMode === 'quickReview' ? 0 : -1}
-          onClick={() => onModeChange('quickReview')}
-          onKeyDown={(event) => handleModeKeyDown(event, 'quickReview')}
-        >
-          <Zap size={17} aria-hidden="true" />
-          <span>Quick Review</span>
-        </button>
-
-        {hasPractice && (
-          <button
-            id={`lesson-${lessonId}-practice-tab`}
-            type="button"
-            role="tab"
-            className="lesson-mode-switch__tab lesson-mode-switch__tab--practice"
-            data-selected={activeMode === 'practice' || undefined}
-            aria-selected={activeMode === 'practice'}
-            aria-controls={`lesson-${lessonId}-mode-panel`}
-            tabIndex={activeMode === 'practice' ? 0 : -1}
-            onClick={() => onModeChange('practice')}
-            onKeyDown={(event) => handleModeKeyDown(event, 'practice')}
-          >
-            <ClipboardCheck size={17} aria-hidden="true" />
-            <span>Practice</span>
-          </button>
-        )}
-      </div>
     </header>
   );
 };

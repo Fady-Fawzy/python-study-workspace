@@ -10,11 +10,9 @@ function renderHeader(overrides: Partial<React.ComponentProps<typeof LessonHeade
     category: 'Functions & Scope',
     isCompleted: false,
     isBookmarked: false,
-    activeMode: 'detailed',
     isFullView: false,
     onToggleComplete: vi.fn(),
     onToggleBookmark: vi.fn(),
-    onModeChange: vi.fn(),
     onToggleFullView: vi.fn(),
     ...overrides
   };
@@ -23,29 +21,11 @@ function renderHeader(overrides: Partial<React.ComponentProps<typeof LessonHeade
 }
 
 describe('LessonHeader', () => {
-  it('uses a document masthead and dedicated sticky mode rail', () => {
+  it('uses a focused document masthead without duplicating study controls', () => {
     renderHeader();
 
     expect(screen.getByRole('banner', { name: 'Lesson overview' })).toHaveClass('lesson-masthead');
-    expect(screen.getByRole('tablist', { name: 'Study mode' })).toHaveClass('lesson-mode-rail');
-  });
-
-  it('exposes the study modes as an accessible single-select tab set', async () => {
-    const user = userEvent.setup();
-    const props = renderHeader();
-
-    const tablist = screen.getByRole('tablist', { name: /study mode/i });
-    const detailed = screen.getByRole('tab', { name: /detailed study/i });
-    const quick = screen.getByRole('tab', { name: /quick review/i });
-
-    expect(tablist).toContainElement(detailed);
-    expect(detailed).toHaveAttribute('aria-selected', 'true');
-    expect(detailed).toHaveAttribute('tabindex', '0');
-    expect(quick).toHaveAttribute('aria-selected', 'false');
-    expect(quick).toHaveAttribute('tabindex', '-1');
-
-    await user.click(quick);
-    expect(props.onModeChange).toHaveBeenCalledWith('quickReview');
+    expect(screen.queryByRole('tablist', { name: 'Study mode' })).not.toBeInTheDocument();
   });
 
   it('announces bookmark and completion pressed state and invokes both actions', async () => {
@@ -79,14 +59,4 @@ describe('LessonHeader', () => {
     expect(exitProps.onToggleFullView).toHaveBeenCalledWith(false);
   });
 
-  it('adds Practice to the tablist only when the lesson has a practice bank', async () => {
-    const user = userEvent.setup();
-    const props = renderHeader({ hasPractice: true });
-
-    const practice = screen.getByRole('tab', { name: 'Practice' });
-    expect(practice).toHaveAttribute('aria-selected', 'false');
-
-    await user.click(practice);
-    expect(props.onModeChange).toHaveBeenCalledWith('practice');
-  });
 });

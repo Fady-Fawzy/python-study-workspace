@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DetailedLessonMap, Lesson, SyntaxSection } from '../types/content';
 import { PracticeLessonMap } from '../types/practice';
 import { PracticeProgress, StudyStateV1 } from '../types/state';
@@ -9,13 +9,19 @@ import { QuickReviewContent } from '../components/lesson/QuickReviewContent';
 import { PracticeContent } from '../components/lesson/PracticeContent';
 import { TableOfContents } from '../components/lesson/TableOfContents';
 import { LessonReadingControls } from '../components/lesson/LessonReadingControls';
-import { LessonProgressBar } from '../components/lesson/LessonProgressBar';
-import { LessonNotes } from '../components/lesson/LessonNotes';
+import { LessonStudyDock, StudyMode } from '../components/lesson/LessonStudyDock';
+import { LessonNotesSurface } from '../components/lesson/LessonNotesSurface';
 import { LessonPagination } from '../components/lesson/LessonPagination';
 import { LessonSyntaxLinks } from '../components/lesson/LessonSyntaxLinks';
 import { selectDetailedLesson } from '../lib/detailedContent';
-import { readReadingPosition, writeReadingPosition } from '../lib/readingPosition';
+import {
+  ReadingCheckpoint,
+  readReadingCheckpoint,
+  writeReadingCheckpoint
+} from '../lib/readingPosition';
 import { recordStudyActivity } from '../lib/studyActivity';
+import { closeTransientOverlays } from '../lib/overlayEvents';
+import { useLessonSectionProgress } from '../hooks/useLessonSectionProgress';
 
 interface LessonViewProps {
   lessonId: string;
@@ -42,7 +48,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
   isFullView = false,
   onFullViewChange = () => undefined
 }) => {
-  const [activeMode, setActiveMode] = useState<'detailed' | 'quickReview' | 'practice'>(state.preferredMode || 'detailed');
+  const [activeMode, setActiveMode] = useState<StudyMode>(state.preferredMode || 'detailed');
+  const [isContentsOpen, setIsContentsOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [savedCheckpoint, setSavedCheckpoint] = useState<ReadingCheckpoint>(() => (
+    readReadingCheckpoint(lessonId)
+  ));
+  const contentsButtonRef = useRef<HTMLButtonElement>(null);
+  const notesButtonRef = useRef<HTMLButtonElement>(null);
 
   const currentIndex = lessons.findIndex(l => l.id === lessonId);
   const lesson = currentIndex !== -1 ? lessons[currentIndex] : lessons[0];
@@ -51,6 +64,12 @@ export const LessonView: React.FC<LessonViewProps> = ({
   const detailedLesson = selectDetailedLesson(lesson, detailedLessons);
   const detailedToc = detailedLesson?.toc || lesson.toc;
   const practiceLesson = practiceLessons[lesson.id];
+  const sectionProgress = useLessonSectionProgress(
+    detailedToc,
+    activeMode === 'detailed' && detailedToc.length > 0
+  );
+  const activeSectionRef = useRef(sectionProgress.activeItem);
+  activeSectionRef.current = sectionProgress.activeItem;
 
   useEffect(() => {
     if (activeMode === 'practice' && !practiceLesson) {
@@ -73,31 +92,51 @@ export const LessonView: React.FC<LessonViewProps> = ({
       };
     });
 
-    window.scrollTo({ top: readReadingPosition(lesson.id), behavior: 'auto' });
+    setIsContentsOpen(false);
+    setIsNotesOpen(false);
+
+    const checkpoint = readReadingCheckpoint(lesson.id);
+    setSavedCheckpoint(checkpoint);
+    const savedHeading = checkpoint.sectionId
+      ? document.getElementById(checkpoint.sectionId)
+      : null;
+    if (savedHeading && typeof savedHeading.scrollIntoView === 'function') {
+      savedHeading.scrollIntoView({ behavior: 'auto', block: 'start' });
+    } else {
+      window.scrollTo({ top: checkpoint.y, behavior: 'auto' });
+    }
   }, [lesson, onUpdateState]);
 
   // Keep a lightweight, lesson-scoped reading checkpoint without coupling it
   // to the main study state. The requestAnimationFrame guard prevents a long
   // reading session from writing localStorage for every scroll event.
   useEffect(() => {
-    if (!lesson) return;
+    if (!lesson || activeMode !== 'detailed') return;
 
     let frame: number | null = null;
     let frameType: 'animation' | 'timeout' | null = null;
+    let pending = false;
     let lastPosition = Math.max(0, window.scrollY || 0);
 
     const persist = () => {
       frame = null;
       frameType = null;
+      pending = false;
       lastPosition = Math.max(0, window.scrollY || 0);
-      writeReadingPosition(lesson.id, lastPosition);
+      const activeSection = activeSectionRef.current;
+      writeReadingCheckpoint(lesson.id, {
+        y: lastPosition,
+        sectionId: activeSection?.id ?? null,
+        sectionText: activeSection?.text ?? null
+      });
     };
 
     const schedulePersist = () => {
       // Capture the position synchronously so route changes cannot replace it
       // with the next page's temporary scroll-to-top position during cleanup.
       lastPosition = Math.max(0, window.scrollY || 0);
-      if (frame !== null) return;
+      if (pending) return;
+      pending = true;
 
       if (typeof window.requestAnimationFrame === 'function') {
         frameType = 'animation';
@@ -109,7 +148,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
     };
 
     const flushPersist = () => {
-      if (frame !== null) {
+      if (pending && frame !== null) {
         if (frameType === 'animation' && typeof window.cancelAnimationFrame === 'function') {
           window.cancelAnimationFrame(frame);
         } else if (frameType === 'timeout') {
@@ -117,8 +156,14 @@ export const LessonView: React.FC<LessonViewProps> = ({
         }
         frame = null;
         frameType = null;
+        pending = false;
       }
-      writeReadingPosition(lesson.id, lastPosition);
+      const activeSection = activeSectionRef.current;
+      writeReadingCheckpoint(lesson.id, {
+        y: lastPosition,
+        sectionId: activeSection?.id ?? null,
+        sectionText: activeSection?.text ?? null
+      });
     };
 
     window.addEventListener('scroll', schedulePersist, { passive: true });
@@ -129,7 +174,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
       window.removeEventListener('pagehide', flushPersist);
       flushPersist();
     };
-  }, [lesson]);
+  }, [activeMode, lesson]);
 
   if (!lesson) {
     return <div>Lesson not found</div>;
@@ -182,8 +227,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
     }));
   };
 
-  const handlePracticeModeChange = (mode: 'detailed' | 'quickReview' | 'practice') => {
+  const handlePracticeModeChange = (mode: StudyMode) => {
     setActiveMode(mode);
+    setIsContentsOpen(false);
+    if (mode === 'practice') setIsNotesOpen(false);
     if (mode !== 'practice') {
       onUpdateState(prev => ({ ...prev, preferredMode: mode }));
     }
@@ -199,8 +246,42 @@ export const LessonView: React.FC<LessonViewProps> = ({
     }));
   };
 
+  const handleOpenContents = () => {
+    closeTransientOverlays();
+    setIsNotesOpen(false);
+    setIsContentsOpen(true);
+  };
+
+  const handleOpenNotes = () => {
+    closeTransientOverlays();
+    setIsContentsOpen(false);
+    setIsNotesOpen(true);
+  };
+
+  const handleResume = () => {
+    if (savedCheckpoint.sectionId) {
+      const heading = document.getElementById(savedCheckpoint.sectionId);
+      if (heading && typeof heading.scrollIntoView === 'function') {
+        heading.scrollIntoView({ behavior: 'auto', block: 'start' });
+        return;
+      }
+    }
+    window.scrollTo({ top: savedCheckpoint.y, behavior: 'auto' });
+  };
+
+  const savedSectionIndex = savedCheckpoint.sectionId
+    ? detailedToc.findIndex(item => item.id === savedCheckpoint.sectionId)
+    : -1;
+  const canResume = Boolean(savedCheckpoint.sectionId)
+    && (savedCheckpoint.y > 96 || savedSectionIndex > 0);
+  const hasSectionNavigation = activeMode === 'detailed' && detailedToc.length > 1;
+
   return (
-    <div className="lesson-layout">
+    <div
+      className="lesson-layout lesson-workspace"
+      data-notes-open={isNotesOpen || undefined}
+      data-study-mode={activeMode}
+    >
       {/* Main Lesson Column */}
       <div className="lesson-main-column">
         <LessonHeader
@@ -209,19 +290,42 @@ export const LessonView: React.FC<LessonViewProps> = ({
           category={lesson.category}
           isCompleted={isCompleted}
           isBookmarked={isBookmarked}
-          activeMode={activeMode}
-          hasPractice={Boolean(practiceLesson)}
           onToggleComplete={handleToggleComplete}
           onToggleBookmark={handleToggleBookmark}
-          onModeChange={handlePracticeModeChange}
           isFullView={isFullView}
           onToggleFullView={onFullViewChange}
         />
 
-        <LessonProgressBar lessonId={lesson.id} />
+        <LessonStudyDock
+          lessonId={lesson.id}
+          activeMode={activeMode}
+          hasPractice={Boolean(practiceLesson)}
+          activeSectionText={sectionProgress.activeItem?.text}
+          activeSectionIndex={sectionProgress.activeIndex}
+          sectionTotal={sectionProgress.total}
+          sectionProgress={sectionProgress.progress}
+          canOpenContents={hasSectionNavigation}
+          canResume={canResume}
+          resumeSectionText={savedCheckpoint.sectionText}
+          contentsButtonRef={contentsButtonRef}
+          notesButtonRef={notesButtonRef}
+          onModeChange={handlePracticeModeChange}
+          onOpenContents={handleOpenContents}
+          onOpenNotes={handleOpenNotes}
+          onResume={handleResume}
+        />
 
-        {activeMode === 'detailed' && detailedToc.length > 1 && (
-          <TableOfContents items={detailedToc} variant="mobile" />
+        {hasSectionNavigation && (
+          <TableOfContents
+            items={detailedToc}
+            variant="mobile"
+            activeId={sectionProgress.activeId}
+            onSelectItem={item => sectionProgress.scrollToSection(item.id)}
+            isOpen={isContentsOpen}
+            onOpenChange={setIsContentsOpen}
+            triggerMode="external"
+            returnFocusRef={contentsButtonRef}
+          />
         )}
 
         {/* Dynamic Mode Content */}
@@ -257,14 +361,6 @@ export const LessonView: React.FC<LessonViewProps> = ({
           onNavigate={onNavigate}
         />
 
-        {/* Personal Study Notes */}
-        <LessonNotes
-          lessonId={lesson.id}
-          initialNote={initialNote}
-          onSaveNote={handleSaveNote}
-          initiallyOpen={false}
-        />
-
         {/* Lesson Pagination */}
         <LessonPagination
           prevLesson={prevLesson}
@@ -276,9 +372,23 @@ export const LessonView: React.FC<LessonViewProps> = ({
       </div>
 
       {/* Sticky Table of Contents (Desktop) */}
-      {activeMode === 'detailed' && detailedToc.length > 1 && (
-        <TableOfContents items={detailedToc} variant="desktop" />
+      {hasSectionNavigation && (
+        <TableOfContents
+          items={detailedToc}
+          variant="desktop"
+          activeId={sectionProgress.activeId}
+          onSelectItem={item => sectionProgress.scrollToSection(item.id)}
+        />
       )}
+
+      <LessonNotesSurface
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
+        lessonId={lesson.id}
+        initialNote={initialNote}
+        onSaveNote={handleSaveNote}
+        returnFocusRef={notesButtonRef}
+      />
 
       <LessonReadingControls />
     </div>
