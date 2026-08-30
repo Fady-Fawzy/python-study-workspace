@@ -66,6 +66,48 @@ describe('markdown styling contracts', () => {
     );
   });
 
+  it('protects compact shell gutters and long navigation labels', () => {
+    expect(tokens).toMatch(
+      /--page-gutter-compact-safe:\s*max\(\s*var\(--page-gutter-compact\),\s*var\(--safe-area-left\),\s*var\(--safe-area-right\)\s*\);/
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-nav-row__title\s*\{[^}]*min-inline-size:\s*0;[^}]*flex:\s*1 1 auto;[^}]*overflow-wrap:\s*anywhere;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.mobile-bottom-nav__item\s*\{[^}]*min-inline-size:\s*var\(--touch-target\);/s
+    );
+  });
+
+  it('keeps the lesson dock and notes header resilient when controls compete for width', () => {
+    expect(stylesheet).toMatch(
+      /\.lesson-study-dock__actions\s*\{[^}]*min-inline-size:\s*0;[^}]*flex-wrap:\s*wrap;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 860px\)[\s\S]*?\.lesson-study-dock__context\s*\{[^}]*flex-wrap:\s*wrap;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-notes-surface__header\s*>\s*div\s*\{[^}]*min-inline-size:\s*0;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.lesson-masthead \.lesson-header__title\s*\{[^}]*text-wrap:\s*balance;/s
+    );
+  });
+
+  it('keeps index headings and filter rails composed at intermediate widths', () => {
+    expect(stylesheet).toMatch(
+      /\.editorial-index \.saved-view__eyebrow h1,[\s\S]*?\.editorial-index \.syntax-reference__header h1\s*\{[^}]*text-wrap:\s*balance;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.syntax-categories\s*\{[^}]*scroll-padding-inline:\s*var\(--space-2\);[^}]*scrollbar-gutter:\s*stable;/s
+    );
+    expect(stylesheet).toMatch(
+      /\.syntax-section__header\s*\{[^}]*flex-wrap:\s*wrap;[^}]*row-gap:\s*var\(--space-2\);/s
+    );
+    expect(stylesheet).toMatch(
+      /\.dashboard-list-card__header\s*\{[^}]*flex-wrap:\s*wrap;/s
+    );
+  });
+
   it('keeps detailed code, output, and tables in their own horizontal reading surfaces', () => {
     expect(stylesheet).toMatch(
       /\.code-pre\s*\{[^}]*overflow-x:\s*auto;[^}]*overscroll-behavior-inline:\s*contain;/s
