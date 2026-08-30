@@ -3,6 +3,16 @@ import { TocItem } from '../types/content';
 
 const READING_LINE_PX = 112;
 
+function getReadingLinePx(heading: HTMLElement): number {
+  const scrollMargin = Number.parseFloat(
+    window.getComputedStyle(heading).scrollMarginBlockStart
+  );
+
+  return Number.isFinite(scrollMargin) && scrollMargin > 0
+    ? scrollMargin
+    : READING_LINE_PX;
+}
+
 function prefersReducedMotion(): boolean {
   return typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -26,7 +36,7 @@ export function useLessonSectionProgress(items: TocItem[], enabled = true) {
     for (const item of items) {
       const heading = document.getElementById(item.id);
       if (!heading) continue;
-      if (heading.getBoundingClientRect().top <= READING_LINE_PX) current = item;
+      if (heading.getBoundingClientRect().top <= getReadingLinePx(heading)) current = item;
       else break;
     }
     setActiveId(current.id);

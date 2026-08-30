@@ -45,6 +45,17 @@ describe('useLessonSectionProgress', () => {
     expect(result.current.progress).toBe(67);
   });
 
+  it('aligns the active section with the heading scroll margin used by the sticky dock', () => {
+    addHeading('first', -220);
+    const second = addHeading('second', 188);
+    second.style.scrollMarginBlockStart = '188px';
+    addHeading('third', 460);
+
+    const { result } = renderHook(() => useLessonSectionProgress(items, true));
+
+    expect(result.current.activeId).toBe('second');
+  });
+
   it('falls back to the first item when headings are not mounted', () => {
     const { result } = renderHook(() => useLessonSectionProgress(items, true));
 
