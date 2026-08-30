@@ -129,6 +129,21 @@ describe('markdown styling contracts', () => {
     );
   });
 
+  it('keeps lesson actions compact and scannable on phone widths', () => {
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 430px\)[\s\S]*?\.lesson-header__actions\s*\{[^}]*grid-template-columns:\s*var\(--touch-target\) minmax\(0, 1fr\) var\(--touch-target\);/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 430px\)[\s\S]*?\.lesson-header__secondary-actions\s*\{[^}]*display:\s*contents;/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 430px\)[\s\S]*?\.lesson-header__actions \.lesson-full-view-toggle span\s*\{[^}]*position:\s*absolute;[^}]*clip:\s*rect\(/s
+    );
+    expect(stylesheet).toMatch(
+      /@media \(max-width: 430px\)[\s\S]*?\.lesson-masthead \.lesson-header__title\s*\{[^}]*font-size:\s*clamp\(2rem, 10\.5vw, 2\.65rem\);/s
+    );
+  });
+
   it('keeps Notes 2.0 filters readable and tappable on phones', () => {
     expect(stylesheet).toMatch(
       /\.notes-toolbar\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto auto;/s
